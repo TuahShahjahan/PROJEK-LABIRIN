@@ -32,40 +32,85 @@ function giveHint() {
    refreshHint(); $('hmsg').innerHTML = S.hint.msg
 }
 function log(t) { const l = $('log'); l.insertAdjacentHTML('beforeend', '<p>' + t + '</p>'); l.scrollTop = l.scrollHeight }
-function runKruskal() {
-   if (S.krRun) return; S.krRun = true; S.g.edges.forEach(e => { e.st = null; e.cur = false });
-   $('log').innerHTML = '<p><b>Urutkan edge dari bobot terkecil, lalu cek dengan Union-Find.</b></p>';
-   let i = 0, phase = 0; const { steps } = S.k;
-   krTimer = setInterval(() => {
-      if (i >= steps.length) {
-         clearInterval(krTimer); S.krRun = false; S.krDone = true;
-         log('<b>Selesai: MST = ' + S.k.tot + ' dengan ' + (S.g.nodes.length - 1) + ' edge.</b>'); return
-      }
-      const s = steps[i], e = s.e;
-      if (phase === 0) { e.cur = true; log('Cek edge ' + e.a + '–' + e.b + ' (bobot ' + e.w + ')…'); phase = 1 }
-      else {
-         e.cur = false; e.st = s.ok ? 'mst' : 'rej';
-         log(s.ok ? '✔ Diterima: menghubungkan dua komponen. Total ' + s.tot : '✘ Ditolak: akan membentuk cycle'); phase = 0; i++
-      }
-   }, 550)
-}
-function instantKruskal() { clearInterval(krTimer); S.krRun = false; S.krDone = true; S.k.steps.forEach(s => { s.e.st = s.ok ? 'mst' : 'rej'; s.e.cur = false }) }
+// function runKruskal() {
+//    if (S.krRun) return; S.krRun = true; S.g.edges.forEach(e => { e.st = null; e.cur = false });
+//    $('log').innerHTML = '<p><b>Urutkan edge dari bobot terkecil, lalu cek dengan Union-Find.</b></p>';
+//    let i = 0, phase = 0; const { steps } = S.k;
+//    krTimer = setInterval(() => {
+//       if (i >= steps.length) {
+//          clearInterval(krTimer); S.krRun = false; S.krDone = true;
+//          log('<b>Selesai: MST = ' + S.k.tot + ' dengan ' + (S.g.nodes.length - 1) + ' edge.</b>'); return
+//       }
+//       const s = steps[i], e = s.e;
+//       if (phase === 0) { e.cur = true; log('Cek edge ' + e.a + '–' + e.b + ' (bobot ' + e.w + ')…'); phase = 1 }
+//       else {
+//          e.cur = false; e.st = s.ok ? 'mst' : 'rej';
+//          log(s.ok ? '✔ Diterima: menghubungkan dua komponen. Total ' + s.tot : '✘ Ditolak: akan membentuk cycle'); phase = 0; i++
+//       }
+//    }, 550)
+// }
+
+// function instantKruskal() { clearInterval(krTimer); S.krRun = false; S.krDone = true; S.k.steps.forEach(s => { s.e.st = s.ok ? 'mst' : 'rej'; s.e.cur = false }) }
+
 function finish(win) {
-   S.over = true; S.mv = null; S.steps = []; S.route = []; S.pend = null; S.hint = null; instantKruskal(); $('kr').disabled = true; $('hint').disabled = true; $('hmsg').textContent = '';
-   const u = S.used, t = S.k.tot, N = S.g.nodes, v = N.filter(n => n.vis).length, ex = u - t;
-   const stars = !win ? 0 : u <= t ? 3 : u <= t * 1.25 ? 2 : 1, score = win ? Math.max(0, 1000 - 25 * ex - 50 * S.hints) : 0;
-   const last = lvIdx >= LEVELS.length - 1; TC += stars; hud();
+   S.over = true; 
+   S.mv = null; 
+   S.steps = []; 
+   S.route = []; 
+   S.pend = null; 
+   S.hint = null; 
+   
+   // $('kr').disabled = true; 
+   $('hint').disabled = true; 
+   $('hmsg').textContent = '';
+   S.g.edges.forEach(e => {
+      e.st = null;
+      e.cur = false;
+   });
+
+   S.k.edges.forEach(e => {
+      e.st = 'mst';
+   });
+
+   console.log(
+    'MST Prim:',
+    S.k.edges.map(e => e.id)
+);
+
+   const u = S.used, t = S.k.tot, 
+   N = S.g.nodes, 
+   v = N.filter(n => n.vis).length, 
+   ex = u - t;
+
+   const stars = !win ? 0 : u <= t ? 3 : u <= t * 1.25 ? 2 : 1, 
+   score = win ? Math.max(0, 1000 - 25 * ex - 50 * S.hints) : 0;
+   const last = lvIdx >= LEVELS.length - 1; 
+   TC += stars; 
+   hud();
+
    $('ovc').innerHTML = '<h2 style="color:' + (win ? '#2e9b4a' : '#d9444d') + '">' + (win ? 'MENANG! ' + '★'.repeat(stars) + '☆'.repeat(3 - stars) : 'KALAH') + '</h2>' +
       '<p>' + (win ? (ex <= 0 ? 'Semua Poké Ball terhubung dengan pohon optimal: bobotnya sama dengan MST!' : 'Semua Poké Ball terhubung, tetapi pohonmu ' + ex + ' lebih berat dari MST.') : 'Budget tidak cukup untuk menyambung node yang tersisa.') + '</p>' +
+
       '<div class="cmp"><div>Bobot MST (target)<b>' + t + '</b></div><div>Bobot pohonmu<b>' + u + '</b></div>' +
       '<div>Selisih<b>' + (ex >= 0 ? '+' : '') + ex + '</b></div><div>Skor<b>' + score + '</b></div>' +
       '<div>Node terhubung<b>' + v + ' / ' + N.length + '</b></div><div>Siklus ditolak<b>' + S.bounces + '</b></div></div>' +
-      '<p>Skor = maks(0, 1000 − 25 × selisih bobot − 50 × petunjuk (' + S.hints + ')). Di peta: garis hijau tebal = edge MST (Kruskal), garis merah putus-putus = edge yang ditolak karena siklus, garis biru = pohon buatanmu.</p>' +
+
+      '<p>Skor = maks(0, 1000 − 25 × selisih bobot − 50 × petunjuk (' + S.hints + ')). Di peta: garis hijau tebal = edge MST hasil algoritma Prim, garis merah putus-putus = edge yang ditolak karena siklus, garis biru = pohon buatanmu. </p>' +
+
       '<p><b>Pohon rentang:</b> menghubungkan semua V node dengan tepat V−1 = ' + (N.length - 1) + ' edge dan <b>tanpa siklus</b>. Edge yang menutup siklus pasti ditolak, itulah yang membuat Snorlax terpental. MST adalah pohon rentang dengan total bobot minimum.</p>' +
-      '<p><b>Strategi:</b> pada tiap langkah, ambil edge termurah yang menyambung pohonmu ke node baru (algoritma Prim). Kruskal memilih edge dari bobot terkecil di seluruh graph dan menghasilkan bobot MST yang sama.</p>' +
+
+      '<p><b>Strategi:</b> pada tiap langkah, ambil edge termurah yang menyambung pohonmu ke node baru (algoritma Prim). Prim memilih edge termurah yang menghubungkan pohon yang sudah terbentuk ke node baru. </p>' +
+
       '<div class="row"><button class="btn" id="o1">ULANGI</button>' + (win && lvIdx >= 0 && !last ? '<button class="btn" id="o2">LEVEL BERIKUT</button>' : '') + '<button class="btn" id="o3">LIHAT PETA</button><button class="btn" id="o4">MENU</button></div>';
+
    $('ov').style.display = 'flex';
-   $('o1').onclick = () => newGame(lvIdx, lvIdx < 0 ? S.c : null); if ($('o2')) $('o2').onclick = () => newGame(lvIdx + 1);
-   $('o3').onclick = () => $('ov').style.display = 'none'; $('o4').onclick = menu
+   $('o1').onclick = () => newGame(lvIdx, lvIdx < 0 ? S.c : null); 
+   if ($('o2')) $('o2').onclick = () => newGame(lvIdx + 1);
+   $('o3').onclick = () => $('ov').style.display = 'none'; 
+   $('o4').onclick = menu
+
 }
 function menu() { clearInterval(krTimer); S = null; $('game').style.display = 'none'; $('ov').style.display = 'none'; $('lobby').style.display = 'flex' }
+
+
+// instantKruskal() 56 setelah null

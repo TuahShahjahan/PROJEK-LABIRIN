@@ -57,7 +57,7 @@ function pump(ts) { // jalankan antrean langkah; saat diam, jalankan perintah te
         const s = S.steps.shift();
         if (s.pop) {
             popup(s.pop, ts); S.flash = { id: s.edge.id, t0: ts }; s.edge.blocked = true; S.bounces++;
-            $('hmsg').innerHTML = '<b>Siklus!</b> Edge ' + s.from + '–' + s.to + ' menghubungkan dua node yang sudah terhubung di pohonmu, jadi ditolak (sama seperti Kruskal menolak edge yang membentuk cycle). Snorlax terpental, budget tidak berkurang.'; ui(); continue
+            $('hmsg').innerHTML = '<b>Siklus!</b> Edge ' + s.from + '–' + s.to + ' menghubungkan dua node yang sudah terhubung di pohonmu, jadi ditolak (karena akan membentuk siklus pada pohon). Snorlax terpental, budget tidak berkurang.'; ui(); continue
         }
         if (s.arrive) { finishEdge(s); if (S.over) return; continue }
         s.t0 = ts; s.dur = s.fast ? STEP * .55 : STEP; S.mv = s; S.dir = s.dir
@@ -67,8 +67,34 @@ function pump(ts) { // jalankan antrean langkah; saat diam, jalankan perintah te
         else if (S.route.length) { const id = S.route.shift(), a = curNode(), b = S.g.by[id]; go(b.x > a.x ? 'r' : b.x < a.x ? 'l' : b.y > a.y ? 'd' : 'u') }
     }
 }
-function travelTo(id) { // klik node yang sudah terhubung -> jalan otomatis lewat pohon (gratis)
-    if (S.over || busy() || id === S.last) return;
-    if (!S.g.by[id].vis) { popup('Belum terhubung'); return }
-    S.route = treePath(S.last, id).slice(1)
+// function travelTo(id) { // klik node yang sudah terhubung -> jalan otomatis lewat pohon (gratis)
+//     if (S.over || busy() || id === S.last) return;
+//     if (!S.g.by[id].vis) { popup('Belum terhubung'); return }
+//     S.route = treePath(S.last, id).slice(1)
+// }
+function travelTo(id) {
+    if (!S || S.over || busy() || id === S.last) return;
+
+    const from = S.g.by[S.last];
+    const to = S.g.by[id];
+
+    // Memeriksa apakah kedua vertex memiliki edge langsung
+    const edge = S.g.edges.find(e =>
+        (e.a === from.id && e.b === to.id) ||
+        (e.b === from.id && e.a === to.id)
+    );
+
+    if (!edge) {
+        popup('Belum Terhubung');
+        return;
+    }
+
+    let direction;
+
+    if (to.x > from.x) direction = 'r';
+    else if (to.x < from.x) direction = 'l';
+    else if (to.y > from.y) direction = 'd';
+    else if (to.y < from.y) direction = 'u';
+
+    if (direction) go(direction);
 }

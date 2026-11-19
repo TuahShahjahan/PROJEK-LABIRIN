@@ -79,15 +79,13 @@
           <div class="bar"><i id="bar"></i></div>
         </div>
         <div class="card">
-          <button class="btn" id="kr" style="width: 100%">
-            ▶ JALANKAN KRUSKAL
-          </button>
-          <div id="log">
-            <p>
-              Tekan tombol untuk melihat Kruskal memilih edge dari bobot
-              terkecil.
-            </p>
-          </div>
+            <b>INFORMASI ALGORITMA</b>
+            <div id="log">
+                <p>
+                    Bangun pohon rentang dengan menghubungkan node baru
+                    menggunakan edge berbobot minimum.
+                </p>
+            </div>
         </div>
         <div class="card">
           <b style="font-size: 12px"
@@ -104,8 +102,8 @@
         <div class="card lg">
           <span><u style="background: #d9444d"></u>Node belum</span
           ><span><u style="background: #f2b705"></u>Node dikunjungi</span>
-          <span><i style="background: #2e9b4a"></i>Edge MST</span
-          ><span><i style="background: #d9444d"></i>Bukan MST (cycle)</span>
+          <span><i style="background: #2e9b4a"></i>Edge MST (Prim)</span>
+          <span><i style="background: #d9444d"></i>Edge ditolak (siklus)</span>
           <span><i style="background: #b08a4a"></i>Belum diproses</span
           ><span><i style="background: #ffd83b"></i>Sedang diperiksa</span>
           <span><i style="background: #2f6fe0"></i>Rutemu</span
@@ -123,7 +121,7 @@
     <script src="js/assets.js"></script>
     <script src="js/config.js"></script>
     <script src="js/graph.js"></script>
-    <script src="js/kruskal.js"></script>
+    <script src="js/prim.js"></script>
     <script src="js/solver.js"></script>
     <script src="js/state.js"></script>
     <script src="js/player.js"></script>
