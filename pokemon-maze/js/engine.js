@@ -57,7 +57,7 @@ function draw(ts) {
   if (S.mv) { const t = Math.min(1, (ts - S.mv.t0) / S.mv.dur); px = S.mv.fx + (S.mv.tx - S.mv.fx) * t; py = S.mv.fy + (S.mv.ty - S.mv.fy) * t; bob = Math.abs(Math.sin(t * Math.PI)) * 5 }
   if (S.pop && S.pop.text === 'SIKLUS!' && ts - S.pop.t0 < 500) px += Math.sin(ts / 22) * .07; // getar saat menabrak
   const sz = TS * 1.25; cx.fillStyle = 'rgba(0,0,0,.2)'; cx.beginPath(); cx.ellipse(px * TS + TS / 2, py * TS + TS - 4, 12, 4, 0, 0, 7); cx.fill();
-  cx.drawImage(IM[{ l: 'r', r: 'l', u: 'u', d: 'd' }[S.dir]], px * TS + TS / 2 - sz / 2, py * TS + TS - sz + 2 - bob, sz, sz);
+  cx.drawImage(IM[CH + S.dir], px * TS + TS / 2 - sz / 2, py * TS + TS - sz + 2 - bob, sz, sz);
   if (S.pop && ts - S.pop.t0 < 900) {
     const t = (ts - S.pop.t0) / 900, x = S.pop.x * TS + TS / 2, y = S.pop.y * TS - 10 - t * 14;
     cx.globalAlpha = 1 - t * .6; cx.font = 'bold 13px system-ui'; const w = cx.measureText(S.pop.text).width + 16;
