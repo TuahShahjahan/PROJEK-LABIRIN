@@ -21,7 +21,7 @@ function bestEdge() {
 function keyPanel() {
    const K = keys(), L = Object.entries(K).map(([id, k]) => ({ id, k })).sort((a, b) => (a.k == null) - (b.k == null) || a.k - b.k || a.id.localeCompare(b.id));
    const mk = L.length && L[0].k != null ? L[0].k : null;
-   $('dl').innerHTML = L.length ? L.map(x => '<span class="' + (x.k != null && x.k === mk ? 'near' : '') + '"><b>' + x.id + '</b> ' + (x.k == null ? '–' : x.k) + '</span>').join('') : '<span>Semua node sudah terhubung</span>';
+   $('dl').innerHTML = L.length ? L.map(x => '<span class="' + (S.showDist && x.k != null && x.k === mk ? 'near' : '') + '"><b>' + x.id + '</b> ' + (x.k == null ? '–' : x.k) + '</span>').join('') : '<span>Semua node sudah terhubung</span>';
    $('dnote').textContent = mk != null ? 'Termurah sekarang: ' + L.filter(x => x.k === mk).map(x => x.id).join(', ') + ' (bobot ' + mk + '). “–” = belum ada edge dari pohonmu ke node itu.' : ''
 }
 function refreshHint() { if (S.hint) S.hint.path = treePath(S.last, S.hint.u).concat([S.hint.v]) }
@@ -110,7 +110,7 @@ function finish(win) {
    $('o4').onclick = menu
 
 }
-function menu() { clearInterval(krTimer); S = null; $('game').style.display = 'none'; $('ov').style.display = 'none'; $('lobby').style.display = 'flex' }
+function menu() { S = null; $('game').style.display = 'none'; $('ov').style.display = 'none'; $('lobby').style.display = 'flex' }
 
 
 // instantKruskal() 56 setelah null

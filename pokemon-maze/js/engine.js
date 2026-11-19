@@ -28,7 +28,7 @@ function draw(ts) {
     cx.beginPath(); cx.roundRect(mx - 11, my - 10, 22, 20, 5); cx.fill(); cx.stroke();
     cx.fillStyle = '#264b4c'; cx.fillText(e.w, mx, my + 1)
   });
-  const K = S.showDist && !S.over ? keys() : null, mk = K ? Math.min(...Object.values(K).filter(v => v != null)) : 0;
+  const K = !S.over ? keys() : null, mk = K ? Math.min(...Object.values(K).filter(v => v != null)) : 0;
   g.nodes.forEach(n => {
     const [x, y] = C(n), r = 12;
     if (n.vis) {
@@ -40,10 +40,12 @@ function draw(ts) {
       cx.strokeStyle = '#222'; cx.lineWidth = 2.5; cx.beginPath(); cx.arc(x, y, r, 0, 7); cx.moveTo(x - r, y); cx.lineTo(x + r, y); cx.stroke();
       cx.fillStyle = '#fff'; cx.beginPath(); cx.arc(x, y, 4, 0, 7); cx.fill(); cx.stroke()
     }
-    cx.fillStyle = '#243d63'; cx.fillText(n.id, x, y - r - 7);
+    cx.font = 'bold 15px system-ui'; cx.fillStyle = '#243d63'; cx.strokeStyle = '#fffdee'; cx.lineWidth = 2;
+    cx.beginPath(); cx.roundRect(x - 12, y - r - 22, 24, 20, 6); cx.fill(); cx.stroke();
+    cx.fillStyle = '#fff'; cx.fillText(n.id, x, y - r - 11.5); cx.font = 'bold 12px system-ui';
     if (S.hint && S.hint.v === n.id) { const t = (ts % 900) / 900; cx.strokeStyle = '#8a4dff'; cx.lineWidth = 3; cx.globalAlpha = 1 - t; cx.beginPath(); cx.arc(x, y, r + 4 + t * 12, 0, 7); cx.stroke(); cx.globalAlpha = 1 }
     if (K && !n.vis) {
-      const kv = K[n.id], c = kv == null ? '#8a8a8a' : kv === mk ? '#2e9b4a' : '#35609e';
+      const kv = K[n.id], c = kv == null ? '#8a8a8a' : S.showDist && kv === mk ? '#2e9b4a' : '#35609e';
       cx.fillStyle = c; cx.beginPath(); cx.roundRect(x - 13, y + r + 3, 26, 15, 7); cx.fill(); cx.fillStyle = '#fff'; cx.font = 'bold 11px system-ui'; cx.fillText(kv == null ? '–' : kv, x, y + r + 11); cx.font = 'bold 12px system-ui'
     }
   });

@@ -14,12 +14,12 @@ function newGame(i, cfg) { // i = indeks level; cfg = level kustom (level acak)
 const bm = k.tot + Math.max(6, Math.round(k.tot * .3));
     // clearInterval(krTimer);
     S = {
-        c, g, k, budgetMax: bm, budget: bm, used: 0, hints: 0, bounces: 0, hint: null, showDist: true, px: a.x, py: a.y, dir: 'd', mv: null, steps: [], route: [], pend: null,
+        c, g, k, budgetMax: bm, budget: bm, used: 0, hints: 0, bounces: 0, hint: null, showDist: false, px: a.x, py: a.y, dir: 'd', mv: null, steps: [], route: [], pend: null,
         last: a.id, over: false, fx: [], trail: [], pop: null, flash: null
     };
     cv.width = g.W * TS; cv.height = g.H * TS; $('lname').textContent = c.name;
     $('log').innerHTML = '<p>Gunakan petunjuk untuk memilih edge termurah yang menghubungkan node baru.</p>';
-    $('hmsg').textContent = '';
+    $('hmsg').textContent = ''; $('dtg').textContent = 'JARAK: OFF';
     // $('kr').disabled = false; 
     $('hint').disabled = false; 
     $('lobby').style.display = 'none'; 
