@@ -1103,3 +1103,131 @@ canvas {
     gap: 14px 18px;
   }
 }
+
+/* ---------- Dialog hasil (MENANG / KALAH) ---------- */
+#ov .card:has(> .lv-dlg.rs-dlg) {
+  max-width: 460px;
+}
+.rs-dlg .lv-head {
+  padding: 34px 24px 12px;
+}
+.rs-dlg.is-win .lv-head h2 {
+  animation: rs-title 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+.rs-dlg.is-lose .lv-head h2 {
+  color: #ff8a90;
+  animation: rs-shake 0.5s both;
+}
+.rs-stars {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+.rs-star {
+  font-size: clamp(44px, 12vw, 60px);
+  line-height: 1;
+  color: #f2b705;
+  text-shadow: 0 3px 0 #b07f00, 0 0 18px rgba(242, 183, 5, 0.55);
+}
+.rs-star.on {
+  opacity: 0;
+  animation: rs-star-pop 0.55s cubic-bezier(0.2, 1.5, 0.4, 1) calc(var(--i) * 450ms + 250ms) forwards;
+}
+.rs-star.off {
+  color: var(--line);
+  text-shadow: none;
+  opacity: 0.45;
+}
+.rs-after {
+  opacity: 0;
+  animation: rs-fade 0.5s ease var(--after, 0ms) forwards;
+}
+.rs-summary {
+  margin: 4px 0 16px;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.55;
+}
+.rs-nums {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 8px;
+  border-top: 3px dotted var(--line);
+  border-bottom: 3px dotted var(--line);
+}
+.rs-nums div {
+  flex: 1;
+  text-align: center;
+}
+.rs-nums small {
+  display: block;
+  margin-bottom: 8px;
+  font: normal 9px/1.3 "Press Start 2P", monospace;
+  opacity: 0.7;
+}
+.rs-nums b {
+  font: normal 20px/1.2 "Press Start 2P", monospace;
+}
+.rs-nums div:last-child b {
+  color: #2e9b4a;
+}
+.rs-formula {
+  margin: 12px 0 14px;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.5;
+  opacity: 0.75;
+}
+.rs-more {
+  margin-bottom: 16px;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.rs-more summary {
+  cursor: pointer;
+  text-align: center;
+  font-weight: 700;
+  color: var(--blue);
+}
+.rs-more[open] summary {
+  margin-bottom: 10px;
+}
+.rs-list {
+  margin: 0 0 10px;
+  padding-left: 20px;
+}
+.rs-more p {
+  margin: 8px 0;
+}
+.rs-actions {
+  margin-top: 4px;
+}
+
+@keyframes rs-star-pop {
+  0% { opacity: 0; transform: scale(0.1) rotate(-60deg); }
+  70% { opacity: 1; transform: scale(1.3) rotate(8deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+@keyframes rs-title {
+  from { opacity: 0; transform: translateY(-14px) scale(0.8); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes rs-shake {
+  0%, 100% { transform: none; }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+@keyframes rs-fade {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rs-star.on,
+  .rs-after,
+  .rs-dlg .lv-head h2 {
+    animation: none;
+    opacity: 1;
+  }
+}

@@ -157,9 +157,7 @@ export function showResult(result, { onRestart, onNext, onMenu, hasNext }) {
   const total = S.g.nodes.length;
   const connected = S.g.nodes.filter((n) => n.vis).length;
 
-  const title = win
-    ? `<h2 style="color:#2e9b4a">MENANG! ${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}</h2>`
-    : '<h2 style="color:#d9444d">KALAH</h2>';
+  const title = win ? 'MENANG!' : 'KALAH';
 
   const summary = !win
     ? `Budget tersisa ${S.budget}, padahal minimal butuh ${remainingCost(S.g)} lagi untuk menyambung ${total - connected} node yang tersisa. Pilihan edge sebelumnya terlalu boros, jadi MST tidak mungkin dicapai.`
@@ -167,24 +165,43 @@ export function showResult(result, { onRestart, onNext, onMenu, hasNext }) {
       ? 'Semua Poké Ball terhubung dengan pohon optimal: bobotnya sama dengan MST!'
       : `Semua Poké Ball terhubung, tetapi pohonmu ${extra} lebih berat dari MST.`;
 
+  // Bintang muncul satu per satu (--i = urutan); yang tidak didapat langsung tampil redup
+  const bigStars = [1, 2, 3].map((i) =>
+    `<span class="rs-star ${i <= stars ? 'on' : 'off'}" style="--i:${i - 1}">★</span>`).join('');
+  const afterMs = (win ? stars : 0) * 450 + 300; // jeda sebelum ringkasan muncul
+
   openDialog(`
-    ${title}
-    <p>${summary}</p>
-    <div class="cmp">
-      <div>Bobot MST (target)<b>${mst}</b></div>
-      <div>Bobot pohonmu<b>${used}</b></div>
-      <div>Selisih<b>${win ? (extra >= 0 ? '+' : '') + extra : '–'}</b></div>
-      <div>Skor<b>${score}</b></div>
-      <div>Node terhubung<b>${connected} / ${total}</b></div>
-      <div>Siklus ditolak<b>${S.bounces}</b></div>
-    </div>
-    <p>Skor = maks(0, ${SCORE.base} − ${SCORE.perExtraWeight} × selisih bobot − ${SCORE.perHint} × petunjuk (${S.hints})).</p>
-    <p><b>Pohon rentang:</b> menghubungkan semua V node dengan tepat V−1 = ${total - 1} edge dan <b>tanpa siklus</b>. Edge yang menutup siklus pasti ditolak, itulah yang membuat karakter terpental. MST adalah pohon rentang dengan total bobot minimum.</p>
-    <p><b>Strategi:</b> pada tiap langkah, ambil edge termurah yang menyambung pohonmu ke node baru (algoritma Prim).</p>
-    <div class="row">
-      <button class="btn" data-action="restart">ULANGI</button>
-      ${hasNext ? '<button class="btn" data-action="next">LANJUT</button>' : ''}
-      <button class="btn" data-action="menu">MENU</button>
+    <div class="lv-dlg rs-dlg ${win ? 'is-win' : 'is-lose'}" style="--after:${afterMs}ms">
+      <div class="lv-head">
+        <h2>${title}</h2>
+        <div class="rs-stars" aria-label="${stars} dari 3 bintang">${bigStars}</div>
+      </div>
+      <div class="lv-body">
+        <div class="rs-after">
+          <p class="rs-summary">${summary}</p>
+          <div class="rs-nums">
+            <div><small>BOBOTMU</small><b>${used}</b></div>
+            <div><small>MST</small><b>${mst}</b></div>
+            <div><small>SKOR</small><b>${score}</b></div>
+          </div>
+          <p class="rs-formula">Skor = maks(0, ${SCORE.base} − ${SCORE.perExtraWeight} × selisih bobot − ${SCORE.perHint} × petunjuk (${S.hints}))</p>
+          <details class="rs-more">
+            <summary>Lihat detail &amp; penjelasan</summary>
+            <ul class="rs-list">
+              <li>Selisih bobot: <b>${win ? (extra >= 0 ? '+' : '') + extra : '–'}</b></li>
+              <li>Node terhubung: <b>${connected} / ${total}</b></li>
+              <li>Siklus ditolak: <b>${S.bounces}</b></li>
+            </ul>
+            <p><b>Pohon rentang:</b> menghubungkan semua V node dengan tepat V−1 = ${total - 1} edge dan <b>tanpa siklus</b>. Edge yang menutup siklus pasti ditolak, itulah yang membuat karakter terpental. MST adalah pohon rentang dengan total bobot minimum.</p>
+            <p><b>Strategi:</b> pada tiap langkah, ambil edge termurah yang menyambung pohonmu ke node baru (algoritma Prim).</p>
+          </details>
+          <div class="row rs-actions">
+            <button class="btn" data-action="restart">ULANGI</button>
+            ${hasNext ? '<button class="btn" data-action="next">LANJUT</button>' : ''}
+            <button class="btn" data-action="menu">MENU</button>
+          </div>
+        </div>
+      </div>
     </div>
   `, { restart: onRestart, next: onNext, menu: onMenu });
 }
