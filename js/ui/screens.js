@@ -7,6 +7,7 @@ import { CHARACTERS } from '../data/sprites.js';
 import { remainingCost } from '../logic/prim.js';
 import { game } from '../logic/state.js';
 import { $ } from './dom.js';
+import { getStars, saveStars } from '../logic/progress.js';
 
 let currentActions = {};
 
@@ -31,18 +32,52 @@ $('ovc').addEventListener('click', (e) => {
 
 /* ---------- Pilih level ---------- */
 
+// Warna kotak nomor tiap level (makin ke bawah makin sulit); berulang kalau level bertambah
+const LEVEL_COLORS = ['#4a9d52', '#2f86c9', '#8a4dff', '#e8892b', '#d9444d', '#d6479b', '#c79a00', '#243d63'];
+
+const starRow = (n) => [1, 2, 3].map((i) => `<span class="${i <= n ? 'on' : 'off'}">★</span>`).join('');
+
 export function showLevelSelect({ onSelect }) {
-  const levelButtons = LEVELS.map((l, i) =>
-    `<button class="btn" data-action="level" data-i="${i}"><span>${l.name}</span><span>${Object.keys(l.n).length} node</span></button>`
-  ).join('');
+  const cards = LEVELS.map((l, i) => {
+    const [head, ...rest] = l.name.split(' · '); // "LEVEL 1" · "BEGINNER"
+    const desc = rest.join(' · ') || head;
+    const num = (head.match(/\d+/) || [i + 1])[0];
+    const stars = getStars(l.name);
+    const nodes = Object.keys(l.n).length;
+    return `
+      <button class="lv-card${stars === 3 ? ' perfect' : ''}" style="--c:${LEVEL_COLORS[i % LEVEL_COLORS.length]}" data-action="level" data-i="${i}"
+        aria-label="${head} ${desc}, ${stars} dari 3 bintang, ${nodes} node">
+        <span class="lv-num">${num}</span>
+        <span class="lv-info">
+          <b class="lv-desc">${desc}</b>
+          <span class="lv-stars">${starRow(stars)}</span>
+          <span class="lv-meta"><i class="lv-ball"></i>${nodes} NODE</span>
+        </span>
+      </button>`;
+  }).join('');
+
+  const got = LEVELS.reduce((sum, l) => sum + getStars(l.name), 0);
 
   openDialog(`
-    <h2>PILIH LEVEL</h2>
-    <div class="lv">
-      ${levelButtons}
-      <button class="btn" data-action="level" data-i="-1"><span>LEVEL ACAK</span><span>baru tiap main</span></button>
+    <div class="lv-dlg">
+      <div class="lv-head">
+        <h2>PILIH LEVEL</h2>
+        <p>★ ${got} / ${LEVELS.length * 3} bintang terkumpul</p>
+        <button class="lv-close" data-action="close" aria-label="Tutup">✕</button>
+      </div>
+      <div class="lv-body">
+        <div class="lv-grid">
+          ${cards}
+          <button class="lv-card lv-rand" data-action="level" data-i="-1" aria-label="Level acak, peta baru tiap main">
+            <span class="lv-num">?</span>
+            <span class="lv-info">
+              <b class="lv-desc">LEVEL ACAK</b>
+              <span class="lv-sub">Peta baru tiap main · 6–15 node</span>
+            </span>
+          </button>
+        </div>
+      </div>
     </div>
-    <div class="row"><button class="btn" data-action="close">BATAL</button></div>
   `, {
     level: (d) => onSelect(Number(d.i)),
     close: closeDialog,
@@ -78,6 +113,7 @@ export function showSettings({ onCharacter, onSpeed }) {
 export function showResult(result, { onRestart, onNext, onMenu, hasNext }) {
   const { win, stars, score, extra, mst, used } = result;
   const S = game.state;
+  if (game.levelIndex >= 0) saveStars(S.level.name, stars);
   const total = S.g.nodes.length;
   const connected = S.g.nodes.filter((n) => n.vis).length;
 
