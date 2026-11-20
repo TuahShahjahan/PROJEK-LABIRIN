@@ -9,7 +9,7 @@ import { createState, game, hooks } from './logic/state.js';
 import { $, showScreen } from './ui/dom.js';
 import { closeMenu, initHamburger, resetPanel, setMessage, updateHeader, updatePanel } from './ui/hud.js';
 import { draw, nodeAtPointer, resizeCanvas } from './ui/render.js';
-import { closeDialog, isDialogOpen, showHowToPlay, showLevelSelect, showResult, showSettings } from './ui/screens.js';
+import { closeDialog, isDialogOpen, showLevelSelect, showResult, showSettings } from './ui/screens.js';
 
 /* ---------- Alur permainan ---------- */
 
@@ -82,7 +82,8 @@ function setCharacter(id) {
 }
 
 $('start').onclick = () => showLevelSelect({ onSelect: selectLevel });
-$('how').onclick = showHowToPlay;
+$('how').onclick = () => showScreen('howto');
+$('howBack').onclick = () => showScreen('lobby');
 $('set').onclick = () => showSettings({
     onCharacter: setCharacter,
     onSpeed: (ms) => { game.stepMs = ms; },

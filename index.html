@@ -19,6 +19,8 @@
       <img src="assets/ui/pikachu-logo.png" alt="" />
       <b class="px">POKÉMON MAZE</b>
 
+      <span class="hdr-title" id="hdrTitle">HOW TO PLAY</span>
+
       <div class="hud">
         <div class="chip pts"><i class="ball"></i><b id="hB">0</b></div>
         <div class="chip pts"><i class="coin"></i><b id="hC">0</b></div>
@@ -78,6 +80,147 @@
         <span>KELOMPOK 6</span><span>EGA ASLIYA PUTRI</span
         ><span>ENDRY JULYAN PUTRA</span> <span>M. BOLKIAH AYESHA A.A</span
         ><span>TUAH SHAHJAHAN ARZU</span><span>SHAFIN MAULANA</span>
+      </footer>
+    </main>
+
+    <!-- ===== CARA MAIN (layar penuh, mengikuti docs/design/how-to-play.png) ===== -->
+    <main id="howto">
+      <div class="ht-wrap">
+        <h1 class="px">HOW TO PLAY</h1>
+        <p class="ht-lead">
+          Sambungkan semua Poké Ball. Hemat budget. Buktikan strategi terbaikmu.
+        </p>
+        <p class="ht-note">
+          Kontrol: WASD / tombol arah, atau klik node di sebelahmu. Menabrak
+          tembok tidak mengurangi budget.
+        </p>
+
+        <div class="ht-steps">
+          <section class="card">
+            <span class="px ht-num">01</span>
+            <h3>START → SEMUA BALL</h3>
+            <p>
+              Gerakkan partner-mu dari titik Start menyusuri koridor ke tiap
+              Poké Ball (node). Sambungkan semuanya.<br />Bergerak hanya atas,
+              bawah, kiri, kanan.
+            </p>
+          </section>
+          <section class="card">
+            <span class="px ht-num">02</span>
+            <h3>JAGA BUDGET-MU</h3>
+            <p>
+              Budget = bobot MST + sedikit kelonggaran. Setiap petak edge baru
+              mengurangi 1 budget; edge yang sudah dipasang gratis dilewati
+              lagi. Jika sisa budget tak cukup untuk menyambung semua node,
+              permainan berakhir.
+            </p>
+          </section>
+          <section class="card">
+            <span class="px ht-num">03</span>
+            <h3>KEJAR SKOR TERBAIK</h3>
+            <p>
+              Semakin dekat bobot pohonmu ke bobot MST, semakin tinggi
+              skornya.<br />Edge MST ditampilkan setelah permainan selesai.
+            </p>
+          </section>
+        </div>
+
+        <div class="ht-info">
+          <section class="card">
+            <h4>KENAPA SPANNING TREE?</h4>
+            <p>
+              Semua node terhubung dan tidak membentuk siklus. Edge yang menutup
+              siklus ditolak dan pemain terpental balik. Hanya ada satu jalur
+              sederhana antar dua node.
+            </p>
+            <div class="ht-tree">
+              <svg
+                viewBox="0 0 304 124"
+                role="img"
+                aria-label="Contoh graf pohon"
+              >
+                <g stroke="#4f9a4a" stroke-width="4" stroke-linecap="round">
+                  <path
+                    d="M33 37H113M113 37H193M193 37H273M113 37V97M193 37V97"
+                  />
+                </g>
+                <rect
+                  x="23"
+                  y="27"
+                  width="20"
+                  height="20"
+                  rx="2"
+                  fill="#d9444d"
+                />
+                <rect
+                  x="103"
+                  y="27"
+                  width="20"
+                  height="20"
+                  rx="2"
+                  fill="#7dac5a"
+                />
+                <rect
+                  x="183"
+                  y="27"
+                  width="20"
+                  height="20"
+                  rx="2"
+                  fill="#7dac5a"
+                />
+                <rect
+                  x="263"
+                  y="27"
+                  width="20"
+                  height="20"
+                  rx="2"
+                  fill="#35609e"
+                />
+                <rect
+                  x="103"
+                  y="87"
+                  width="20"
+                  height="20"
+                  rx="2"
+                  fill="#7dac5a"
+                />
+                <rect
+                  x="183"
+                  y="87"
+                  width="20"
+                  height="20"
+                  rx="2"
+                  fill="#7dac5a"
+                />
+              </svg>
+              <b>TERHUBUNG<br />TANPA SIKLUS<br />SATU JALUR UNIK</b>
+            </div>
+            <small>Ilustrasi graf pohon; bukan peta permainan.</small>
+          </section>
+          <section class="card">
+            <h4>SKOR &amp; BINTANG</h4>
+            <p class="ht-formula">
+              Skor = maks(0, 1000 − 25 × bobot ekstra − 50 × petunjuk)
+            </p>
+            <p>Bobot ekstra = bobot pohonmu − bobot MST.</p>
+            <dl class="ht-stars">
+              <dt>3 BINTANG</dt>
+              <dd>Sama dengan bobot MST.</dd>
+              <dt>2 BINTANG</dt>
+              <dd>Maksimal 25% lebih berat dari MST.</dd>
+              <dt>1 BINTANG</dt>
+              <dd>Semua node terhubung, tetapi lebih dari 25% di atas MST.</dd>
+            </dl>
+          </section>
+        </div>
+      </div>
+
+      <footer class="ht-foot">
+        <button class="btn" id="howBack">MAIN MENU</button>
+        <div class="ht-meta">
+          <b>KANTO / RUTE 01</b><span>Setiap langkah berarti.</span
+          ><span>POKÉMON MAZE &nbsp;•&nbsp; SOLO</span>
+        </div>
       </footer>
     </main>
 

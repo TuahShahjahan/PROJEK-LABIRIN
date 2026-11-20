@@ -34,6 +34,20 @@ function cheapestCrossingEdge(edges, isInTree) {
 /** Edge terbaik berikutnya menurut Prim, berdasarkan pohon buatan pemain. */
 export const bestEdge = (g) => cheapestCrossingEdge(g.edges, (id) => g.by[id].vis);
 
+/** Biaya MINIMUM untuk menyambung semua node yang tersisa dari pohon pemain sekarang
+ *  (Prim dilanjutkan dari himpunan node yang sudah terhubung). Infinity = mustahil. */
+export function remainingCost(g) {
+  const inTree = new Set(g.nodes.filter((n) => n.vis).map((n) => n.id));
+  let cost = 0;
+  while (inTree.size < g.nodes.length) {
+    const best = cheapestCrossingEdge(g.edges, (id) => inTree.has(id));
+    if (!best) return Infinity;
+    cost += best.w;
+    inTree.add(inTree.has(best.a) ? best.b : best.a);
+  }
+  return cost;
+}
+
 /** Untuk tiap node yang belum terhubung: bobot edge termurah dari pohon (null = belum ada). */
 export function candidateCosts(g) {
   const costs = {};

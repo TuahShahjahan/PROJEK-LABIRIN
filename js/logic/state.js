@@ -3,7 +3,7 @@
    `session` : total poin yang dikumpulkan selama halaman terbuka
    `hooks`   : callback ke UI, diisi oleh main.js supaya logika
                tidak perlu mengimpor kode UI. */
-import { BUDGET_MARGIN_MIN, BUDGET_MARGIN_RATIO } from '../data/config.js';
+import { BUDGET_MARGIN_DEFAULT, BUDGET_MARGIN_MIN } from '../data/config.js';
 import { buildGraph } from './graph.js';
 import { prim } from './prim.js';
 
@@ -17,9 +17,9 @@ export const game = {
 export const session = { balls: 0, coins: 0 };
 
 export const hooks = {
-  change() {},        // state berubah -> perbarui tampilan
-  message(html) {},   // tampilkan pesan di panel
-  finish(win) {},     // permainan selesai
+  change() { },        // state berubah -> perbarui tampilan
+  message(html) { },   // tampilkan pesan di panel
+  finish(win) { },     // permainan selesai
 };
 
 /** Buat state baru dari data level. Mengembalikan null jika graph tidak terhubung. */
@@ -31,7 +31,8 @@ export function createState(level) {
   const start = g.by[level.start || g.nodes[0].id];
   start.vis = true;
 
-  const budgetMax = mst.tot + Math.max(BUDGET_MARGIN_MIN, Math.round(mst.tot * BUDGET_MARGIN_RATIO));
+  const margin = level.margin ?? BUDGET_MARGIN_DEFAULT;
+  const budgetMax = mst.tot + Math.max(BUDGET_MARGIN_MIN, Math.round(mst.tot * margin));
 
   return {
     level, g, mst,

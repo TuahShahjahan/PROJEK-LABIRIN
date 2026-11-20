@@ -73,11 +73,11 @@ function makeEdgeStyle(S, ts) {
   const isFlashing = (e) => flash && flash.id === e.id && Math.floor((ts - flash.t0) / 100) % 2 === 0;
   const color = (e) =>
     isFlashing(e) ? COLOR.edgeFlash
-    : e.cur ? COLOR.edgeChecking
-    : e.st === 'mst' ? COLOR.edgeMst
-    : e.st === 'rej' ? COLOR.edgeRejected
-    : e.blocked ? COLOR.edgeBlocked
-    : COLOR.edgeIdle;
+      : e.cur ? COLOR.edgeChecking
+        : e.st === 'mst' ? COLOR.edgeMst
+          : e.st === 'rej' ? COLOR.edgeRejected
+            : e.blocked ? COLOR.edgeBlocked
+              : COLOR.edgeIdle;
   return { isFlashing, color };
 }
 

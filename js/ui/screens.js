@@ -4,6 +4,7 @@
 import { SCORE, SPEEDS } from '../data/config.js';
 import { LEVELS } from '../data/levels.js';
 import { CHARACTERS } from '../data/sprites.js';
+import { remainingCost } from '../logic/prim.js';
 import { game } from '../logic/state.js';
 import { $ } from './dom.js';
 
@@ -48,21 +49,6 @@ export function showLevelSelect({ onSelect }) {
   });
 }
 
-/* ---------- Cara main ---------- */
-
-export function showHowToPlay() {
-  openDialog(`
-    <h2>CARA MAIN</h2>
-    <p>Kamu membangun <b>Minimum Spanning Tree</b>. Tekan satu kali tombol arah (WASD / panah), karakter berjalan otomatis sampai node berikutnya. Sambungkan <b>semua</b> Poké Ball (node) dengan total bobot sekecil mungkin.</p>
-    <p><b>Aturan:</b></p>
-    <p>① Edge baru yang menyambung node baru dibayar sekali: <b>w</b> budget (1 per tile).<br>
-       ② Lewat edge yang sudah kamu ambil itu <b>gratis</b>, jadi mundur ke cabang lain tidak memakan budget.<br>
-       ③ Edge yang menyambung dua node yang sudah ada di tree-mu akan membentuk <b>cycle</b>: kamu <b>terpental</b> dan tidak bisa lewat. Tree tidak boleh punya cycle.</p>
-    <p>Hati-hati: kalau kamu menyambung sebuah node lewat edge mahal, edge murahnya nanti ditolak karena cycle. Pilih edge termurah dulu! Skor makin tinggi jika bobot tree-mu makin dekat dengan MST. Tombol <b>Petunjuk</b> memberi edge terbaik berikutnya (−${SCORE.perHint} skor). Kamu juga bisa mengklik node di sebelahmu untuk berjalan ke sana. Buka menu <b>☰</b> di pojok kanan atas untuk mengulangi level atau kembali ke menu.</p>
-    <div class="row"><button class="btn" data-action="close">MENGERTI</button></div>
-  `, { close: closeDialog });
-}
-
 /* ---------- Pengaturan ---------- */
 
 export function showSettings({ onCharacter, onSpeed }) {
@@ -100,7 +86,7 @@ export function showResult(result, { onRestart, onNext, onMenu, hasNext }) {
     : '<h2 style="color:#d9444d">KALAH</h2>';
 
   const summary = !win
-    ? 'Budget tidak cukup untuk menyambung node yang tersisa.'
+    ? `Budget tersisa ${S.budget}, padahal minimal butuh ${remainingCost(S.g)} lagi untuk menyambung ${total - connected} node yang tersisa. Pilihan edge sebelumnya terlalu boros, jadi MST tidak mungkin dicapai.`
     : extra <= 0
       ? 'Semua Poké Ball terhubung dengan pohon optimal: bobotnya sama dengan MST!'
       : `Semua Poké Ball terhubung, tetapi pohonmu ${extra} lebih berat dari MST.`;
@@ -111,7 +97,7 @@ export function showResult(result, { onRestart, onNext, onMenu, hasNext }) {
     <div class="cmp">
       <div>Bobot MST (target)<b>${mst}</b></div>
       <div>Bobot pohonmu<b>${used}</b></div>
-      <div>Selisih<b>${extra >= 0 ? '+' : ''}${extra}</b></div>
+      <div>Selisih<b>${win ? (extra >= 0 ? '+' : '') + extra : '–'}</b></div>
       <div>Skor<b>${score}</b></div>
       <div>Node terhubung<b>${connected} / ${total}</b></div>
       <div>Siklus ditolak<b>${S.bounces}</b></div>

@@ -58,9 +58,9 @@ function updateCostList(S) {
 
   $('dl').innerHTML = list.length
     ? list.map((x) => {
-        const near = S.showDist && x.cost != null && x.cost === min;
-        return `<span class="${near ? 'near' : ''}"><b>${x.id}</b> ${x.cost == null ? '–' : x.cost}</span>`;
-      }).join('')
+      const near = S.showDist && x.cost != null && x.cost === min;
+      return `<span class="${near ? 'near' : ''}"><b>${x.id}</b> ${x.cost == null ? '–' : x.cost}</span>`;
+    }).join('')
     : '<span>Semua node sudah terhubung</span>';
 
   $('dnote').textContent = min != null

@@ -26,9 +26,10 @@ export const KEY_MAP = {
   W: 'u', S: 'd', A: 'l', D: 'r',
 };
 
-// Budget awal = bobot MST + margin (30% dari MST, minimal 6)
-export const BUDGET_MARGIN_RATIO = 0.3;
-export const BUDGET_MARGIN_MIN = 6;
+// Budget awal = bobot MST + kelonggaran. Tiap level boleh menentukan `margin` sendiri
+// (rasio dari MST); level tanpa margin (level acak) memakai nilai bawaan ini.
+export const BUDGET_MARGIN_DEFAULT = 0.15;
+export const BUDGET_MARGIN_MIN = 2; // kelonggaran minimal (bobot)
 
 // Aturan skor
 export const SCORE = {
