@@ -3,10 +3,11 @@
    sebagai <button data-action="nama"> lalu dihubungkan ke fungsi lewat objek `actions`. */
 import { SCORE, SPEEDS } from '../data/config.js';
 import { LEVELS } from '../data/levels.js';
-import { CHARACTERS } from '../data/sprites.js';
+import { CHARACTERS, getCharacterImage } from '../data/sprites.js';
 import { remainingCost } from '../logic/prim.js';
 import { game } from '../logic/state.js';
 import { $ } from './dom.js';
+import { getTheme, setTheme } from './theme.js';
 import { getStars, saveStars } from '../logic/progress.js';
 
 let currentActions = {};
@@ -86,24 +87,63 @@ export function showLevelSelect({ onSelect }) {
 
 /* ---------- Pengaturan ---------- */
 
-export function showSettings({ onCharacter, onSpeed }) {
-  const selected = (isSelected) => (isSelected ? ' is-selected' : '');
+const CHARACTER_COLORS = ['#2f9e8f', '#e0a800', '#2f86c9', '#8a4dff', '#d6479b'];
+const SPEED_COLORS = ['#4a9d52', '#2f86c9', '#d9444d'];
+const THEMES = [
+  { mode: 'light', icon: '☀', label: 'TERANG', color: '#e8a400' },
+  { mode: 'dark', icon: '☾', label: 'GELAP', color: '#5b7fd1' },
+];
 
-  const characters = Object.entries(CHARACTERS).map(([id, c]) =>
-    `<button class="btn${selected(game.character === id)}" data-action="character" data-id="${id}">${c.name}</button>`
+/** Tombol pilihan; `selected` menentukan tanda ✓ dan warna. */
+const option = (action, attr, color, selected, html, extraClass = '') =>
+  `<button class="set-opt ${extraClass}${selected ? ' is-selected' : ''}" style="--c:${color}" data-action="${action}" ${attr} aria-pressed="${selected}">${html}</button>`;
+
+/** Perbarui tanda terpilih tanpa membangun ulang dialog (fokus keyboard tidak hilang). */
+function markSelected(action, key, value) {
+  document.querySelectorAll(`#ovc [data-action="${action}"]`).forEach((b) => {
+    const on = b.dataset[key] === String(value);
+    b.classList.toggle('is-selected', on);
+    b.setAttribute('aria-pressed', String(on));
+  });
+}
+
+export function showSettings({ onCharacter, onSpeed }) {
+  const characters = Object.entries(CHARACTERS).map(([id, c], i) => {
+    const type = c.info.split('·')[1]?.trim() || '';
+    return option('character', `data-id="${id}"`, CHARACTER_COLORS[i % CHARACTER_COLORS.length], game.character === id,
+      `<img class="set-sprite" src="${getCharacterImage(id, 'd').src}" alt="">
+       <span class="set-text"><b class="set-name">${c.name}</b><small class="set-type">${type}</small></span>`, 'set-char');
+  }).join('');
+
+  const speeds = SPEEDS.map((s, i) =>
+    option('speed', `data-ms="${s.ms}"`, SPEED_COLORS[i % SPEED_COLORS.length], game.stepMs === s.ms,
+      `<span class="set-ico">${'▸'.repeat(i + 1)}</span><b class="set-name">${s.label}</b>`)
   ).join('');
 
-  const speeds = SPEEDS.map((s) =>
-    `<button class="btn${selected(game.stepMs === s.ms)}" data-action="speed" data-ms="${s.ms}">${s.label}</button>`
+  const theme = getTheme();
+  const modes = THEMES.map((t) =>
+    option('theme', `data-mode="${t.mode}"`, t.color, theme === t.mode,
+      `<span class="set-ico">${t.icon}</span><b class="set-name">${t.label}</b>`)
   ).join('');
 
   openDialog(`
-    <h2>PENGATURAN</h2>
-    <p>Karakter:</p><div class="row">${characters}</div>
-    <p>Kecepatan jalan:</p><div class="row">${speeds}</div>
+    <div class="lv-dlg set-dlg">
+      <div class="lv-head">
+        <h2>PENGATURAN</h2>
+        <p>Atur karakter, kecepatan, dan tampilan</p>
+        <button class="lv-close" data-action="close" aria-label="Tutup">✕</button>
+      </div>
+      <div class="lv-body">
+        <section class="set-sec"><h3 class="set-label">KARAKTER</h3><div class="set-chars">${characters}</div></section>
+        <section class="set-sec"><h3 class="set-label">KECEPATAN JALAN</h3><div class="set-seg">${speeds}</div></section>
+        <section class="set-sec"><h3 class="set-label">MODE TAMPILAN</h3><div class="set-seg">${modes}</div></section>
+      </div>
+    </div>
   `, {
-    character: (d) => { onCharacter(d.id); closeDialog(); },
-    speed: (d) => { onSpeed(Number(d.ms)); closeDialog(); },
+    character: (d) => { onCharacter(d.id); markSelected('character', 'id', d.id); },
+    speed: (d) => { onSpeed(Number(d.ms)); markSelected('speed', 'ms', d.ms); },
+    theme: (d) => { setTheme(d.mode); markSelected('theme', 'mode', d.mode); },
+    close: closeDialog,
   });
 }
 
