@@ -21,7 +21,7 @@ export const LEVELS = [
     e: ['AB', 'BC', 'CD', 'EF', 'FG', 'GH', 'IJ', 'JK', 'AE', 'EI', 'BF', 'FJ', 'CG', 'GK', 'DH'],
   },
   {
-    name: 'LEVEL 4 · SPAWN DI TENGAH', start: 'D', W: 21, H: 13,
+    name: 'LEVEL 4 · ADVANCE', start: 'D', W: 21, H: 13,
     n: { A: [1, 1], B: [8, 1], C: [19, 1], D: [8, 5], E: [14, 5], F: [19, 5], G: [1, 11], H: [8, 11], I: [14, 11], J: [19, 11] },
     e: ['AB', 'BC', 'BD', 'DE', 'EF', 'CF', 'DH', 'EI', 'FJ', 'GH', 'HI', 'IJ', 'AG'],
   },

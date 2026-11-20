@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"name": "PROJEK LABIRIN",
+			"path": "."
+		},
+		{
+			"name": "js",
+			"path": "../../PROJEK-LABIRIN/js"
+		}
+	],
+	"settings": {
+		"liveServer.settings.port": 5502,
+		"liveServer.settings.multiRootWorkspaceName": "PROJEK LABIRIN"
+	}
+}
