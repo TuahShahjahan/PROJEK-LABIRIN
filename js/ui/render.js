@@ -1,5 +1,4 @@
-/* ===== RENDER CANVAS =====
-   Hanya menggambar. Tidak mengubah state game. */
+/* ===== RENDER CANVAS =====*/
 import { TILE_SIZE as TS } from '../data/config.js';
 import { getCharacterImage, getTreeImage } from '../data/sprites.js';
 import { candidateCosts } from '../logic/prim.js';
@@ -201,9 +200,22 @@ function drawPlayer(S, ts) {
     const t = Math.min(1, (ts - S.mv.t0) / S.mv.dur);
     px = S.mv.fx + (S.mv.tx - S.mv.fx) * t;
     py = S.mv.fy + (S.mv.ty - S.mv.fy) * t;
-    bob = Math.abs(Math.sin(t * Math.PI)) * 5;
+    bob = Math.abs(Math.sin(t * Math.PI)) * (S.mv.bump ? 2.5 : 5);
   }
-  if (S.pop && S.pop.text === 'SIKLUS!' && ts - S.pop.t0 < 500) px += Math.sin(ts / 22) * 0.07; // getar
+
+  const popDir = S.pop?.dir || S.dir;
+  const isVerticalPop = popDir === 'u' || popDir === 'd';
+
+  if (S.pop && S.pop.text === 'SIKLUS!' && ts - S.pop.t0 < 500) {
+    const shake = Math.sin(ts / 22) * 0.07;
+    if (isVerticalPop) py += shake;
+    else px += shake;
+  }
+  if (S.pop && S.pop.text === 'Tembok!' && ts - S.pop.t0 < 220) {
+    const shake = Math.sin(ts / 18) * 0.035;
+    if (isVerticalPop) py += shake;
+    else px += shake;
+  }
 
   const size = TS * 1.25;
   ctx.fillStyle = 'rgba(0,0,0,.2)'; // bayangan
