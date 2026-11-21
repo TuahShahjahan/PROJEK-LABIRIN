@@ -1,0 +1,124 @@
+/* ---------- Cutscene kemenangan Level 8 (js/ui/victory.js) ---------- */
+#cine {
+  position: fixed;
+  inset: 0;
+  z-index: 30; /* di atas dialog (#ov = 9) dan header (5) */
+  display: grid;
+  grid-template-columns: 100%;
+  grid-template-rows: minmax(0, 1fr); /* canvas selalu fullscreen */
+  background: rgba(3, 5, 16, 0); /* alpha dianimasikan dari JS */
+  overflow: hidden;
+  touch-action: none;
+}
+/* timpa aturan `canvas` global (border, background, radius) */
+#cine canvas {
+  grid-row: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: contain;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* Tombol LEWATI: tersembunyi, muncul sebentar saat layar diklik/disentuh */
+.cine-skip {
+  position: absolute;
+  top: calc(14px + env(safe-area-inset-top, 0px));
+  right: calc(14px + env(safe-area-inset-right, 0px));
+  z-index: 1;
+  padding: 10px 12px;
+  font: 9px/1 "Press Start 2P", monospace;
+  color: #ffd83b;
+  background: rgba(3, 5, 16, 0.55);
+  border: 2px solid #ffd83b;
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.cine-skip.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+.cine-skip:hover,
+.cine-skip:focus-visible {
+  background: rgba(255, 216, 59, 0.2);
+  outline: none;
+}
+.cine-skip:disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---------- Tombol ULANGI / MENU: muncul di atas canvas fullscreen setelah cutscene selesai ---------- */
+.cine-actions {
+  position: absolute;
+  left: 50%;
+  top: var(--cine-btn-top, 64%); /* di antara subtitle dan karakter; ubah nilai ini untuk menggeser */
+  transform: translateX(-50%);
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 18px;
+  width: max-content;
+  max-width: calc(100% - 24px);
+  pointer-events: none;
+}
+.cine-actions.show {
+  pointer-events: auto;
+}
+.cine-btn {
+  min-width: 128px;
+  padding: 14px 20px;
+  font: 12px/1 "Press Start 2P", monospace;
+  color: #ffd83b;
+  text-shadow: 2px 2px 0 #0d1a33;
+  background: #243d63;
+  border: 3px solid #ffd83b;
+  border-radius: 6px;
+  box-shadow: 0 4px 0 #0d1a33, 0 0 6px rgba(255, 216, 59, 0.35);
+  cursor: pointer;
+  opacity: 0;
+  transform: scale(0.3);
+}
+.cine-actions.show .cine-btn {
+  animation:
+    cine-btn-in 0.55s cubic-bezier(0.2, 1.5, 0.4, 1) forwards,
+    cine-btn-glow 1.6s ease-in-out 0.6s infinite;
+}
+.cine-actions.show .cine-btn:nth-child(2) {
+  animation-delay: 0.18s, 0.78s; /* tombol kedua menyusul */
+}
+.cine-btn:hover,
+.cine-btn:focus-visible {
+  color: #fff;
+  background: #35609e;
+  outline: none;
+}
+.cine-btn:active {
+  translate: 0 3px;
+  box-shadow: 0 1px 0 #0d1a33, 0 0 6px rgba(255, 216, 59, 0.35);
+}
+
+@keyframes cine-btn-in {
+  0%   { opacity: 0; transform: scale(0.3); }
+  60%  { opacity: 1; transform: scale(1.12); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes cine-btn-glow {
+  0%, 100% { box-shadow: 0 4px 0 #0d1a33, 0 0 6px rgba(255, 216, 59, 0.35); }
+  50%      { box-shadow: 0 4px 0 #0d1a33, 0 0 20px rgba(255, 216, 59, 0.85); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cine-actions.show .cine-btn {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}

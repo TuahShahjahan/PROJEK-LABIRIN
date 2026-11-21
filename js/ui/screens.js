@@ -155,21 +155,52 @@ export function showSettings({ onCharacter, onSpeed }) {
 
 /* ---------- Hasil permainan ---------- */
 
-/** result = hasil dari calculateResult(); actions = { restart, next, menu } */
-export function showResult(result, { onRestart, onNext, onMenu, hasNext }) {
-  const { win, stars, score, extra, mst, used } = result;
+/** Isi ringkasan hasil: penjelasan, angka, rumus, detail, dan tombol aksi.
+ *  Dipakai dialog hasil biasa (showResult) DAN panel hasil di cutscene Level 8 (victory.js). */
+export function resultBodyHtml(result, { hasNext }) {
+  const { win, score, extra, mst, used } = result;
   const S = game.state;
-  if (game.levelIndex >= 0) saveStars(S.level.name, stars);
   const total = S.g.nodes.length;
   const connected = S.g.nodes.filter((n) => n.vis).length;
-
-  const title = win ? 'MENANG!' : 'KALAH';
 
   const summary = !win
     ? `Budget tersisa ${S.budget}, padahal minimal butuh ${remainingCost(S.g)} lagi untuk menyambung ${total - connected} node yang tersisa. Pilihan edge sebelumnya terlalu boros, jadi MST tidak mungkin dicapai.`
     : extra <= 0
       ? 'Semua Poké Ball terhubung dengan pohon optimal: bobotnya sama dengan MST!'
       : `Semua Poké Ball terhubung, tetapi pohonmu ${extra} lebih berat dari MST.`;
+
+  return `
+    <p class="rs-summary">${summary}</p>
+    <div class="rs-nums">
+      <div><small>BOBOTMU</small><b>${used}</b></div>
+      <div><small>MST</small><b>${mst}</b></div>
+      <div><small>SKOR</small><b>${score}</b></div>
+    </div>
+    <p class="rs-formula">Skor = maks(0, ${SCORE.base} − ${SCORE.perExtraWeight} × selisih bobot − ${SCORE.perHint} × petunjuk (${S.hints}))</p>
+    <details class="rs-more">
+      <summary>Lihat detail &amp; penjelasan</summary>
+      <ul class="rs-list">
+        <li>Selisih bobot: <b>${win ? (extra >= 0 ? '+' : '') + extra : '–'}</b></li>
+        <li>Node terhubung: <b>${connected} / ${total}</b></li>
+        <li>Siklus ditolak: <b>${S.bounces}</b></li>
+      </ul>
+      <p><b>Pohon rentang:</b> menghubungkan semua V node dengan tepat V−1 = ${total - 1} edge dan <b>tanpa siklus</b>. Edge yang menutup siklus pasti ditolak, itulah yang membuat karakter terpental. MST adalah pohon rentang dengan total bobot minimum.</p>
+      <p><b>Strategi:</b> pada tiap langkah, ambil edge termurah yang menyambung pohonmu ke node baru (algoritma Prim).</p>
+    </details>
+    <div class="row rs-actions">
+      <button class="btn" data-action="restart">ULANGI</button>
+      ${hasNext ? '<button class="btn" data-action="next">LANJUT</button>' : ''}
+      <button class="btn" data-action="menu">MENU</button>
+    </div>`;
+}
+
+/** result = hasil dari calculateResult(); actions = { restart, next, menu } */
+export function showResult(result, { onRestart, onNext, onMenu, hasNext }) {
+  const { win, stars } = result;
+  const S = game.state;
+  if (game.levelIndex >= 0) saveStars(S.level.name, stars);
+
+  const title = win ? 'MENANG!' : 'KALAH';
 
   // Bintang muncul satu per satu (--i = urutan); yang tidak didapat langsung tampil redup
   const bigStars = [1, 2, 3].map((i) =>
@@ -184,28 +215,7 @@ export function showResult(result, { onRestart, onNext, onMenu, hasNext }) {
       </div>
       <div class="lv-body">
         <div class="rs-after">
-          <p class="rs-summary">${summary}</p>
-          <div class="rs-nums">
-            <div><small>BOBOTMU</small><b>${used}</b></div>
-            <div><small>MST</small><b>${mst}</b></div>
-            <div><small>SKOR</small><b>${score}</b></div>
-          </div>
-          <p class="rs-formula">Skor = maks(0, ${SCORE.base} − ${SCORE.perExtraWeight} × selisih bobot − ${SCORE.perHint} × petunjuk (${S.hints}))</p>
-          <details class="rs-more">
-            <summary>Lihat detail &amp; penjelasan</summary>
-            <ul class="rs-list">
-              <li>Selisih bobot: <b>${win ? (extra >= 0 ? '+' : '') + extra : '–'}</b></li>
-              <li>Node terhubung: <b>${connected} / ${total}</b></li>
-              <li>Siklus ditolak: <b>${S.bounces}</b></li>
-            </ul>
-            <p><b>Pohon rentang:</b> menghubungkan semua V node dengan tepat V−1 = ${total - 1} edge dan <b>tanpa siklus</b>. Edge yang menutup siklus pasti ditolak, itulah yang membuat karakter terpental. MST adalah pohon rentang dengan total bobot minimum.</p>
-            <p><b>Strategi:</b> pada tiap langkah, ambil edge termurah yang menyambung pohonmu ke node baru (algoritma Prim).</p>
-          </details>
-          <div class="row rs-actions">
-            <button class="btn" data-action="restart">ULANGI</button>
-            ${hasNext ? '<button class="btn" data-action="next">LANJUT</button>' : ''}
-            <button class="btn" data-action="menu">MENU</button>
-          </div>
+          ${resultBodyHtml(result, { hasNext })}
         </div>
       </div>
     </div>

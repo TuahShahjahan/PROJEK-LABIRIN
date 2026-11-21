@@ -1,16 +1,19 @@
-/* ===== TITIK MASUK =====
-   Menghubungkan logika game, tampilan, dan input.
-   Alur: Lobby -> pilih level -> main -> hasil (Ulangi / Lanjut / Menu). */
+/* ===== TITIK MASUK =====*/
 import { KEY_MAP } from './data/config.js';
 import { LEVELS, randomLevel } from './data/levels.js';
 import { CHARACTERS, getCharacterImage } from './data/sprites.js';
 import { arrive, command, pump, requestHint, travelTo } from './logic/player.js';
+import { saveStars } from './logic/progress.js';
 import { createState, game, hooks } from './logic/state.js';
 import { $, showScreen } from './ui/dom.js';
 import { closeMenu, initHamburger, resetPanel, setMessage, updateHeader, updatePanel } from './ui/hud.js';
 import { draw, nodeAtPointer, resizeCanvas } from './ui/render.js';
-import { closeDialog, isDialogOpen, showLevelSelect, showResult, showSettings } from './ui/screens.js';
+import { closeDialog, isDialogOpen, resultBodyHtml, showLevelSelect, showResult, showSettings } from './ui/screens.js';
 import { sfx } from './ui/sfx.js';
+import { playLegendVictory } from './ui/victory.js';
+
+/* Cutscene sinematik hanya untuk MENANG di "LEVEL 8 · LEGEND" dengan bobot PERSIS sama dengan MST. */
+const LEGEND_INDEX = LEVELS.findIndex((l) => l.name.startsWith('LEVEL 8'));
 
 /* ---------- Alur permainan ---------- */
 
@@ -62,19 +65,45 @@ hooks.change = () => { updateHeader(); updatePanel(); };
 hooks.message = setMessage;
 hooks.sound = (name) => sfx[name]?.();
 hooks.finish = (result) => {
-    setTimeout(result.win ? sfx.win : sfx.lose, 350);   // jeda sedikit supaya tidak menabrak suara Poké Ball terakhir
-    updateHeader();
-    updatePanel();
+    // Cutscene hanya untuk Level 8 yang dimenangkan dengan bobot PERSIS sama dengan MST.
+    // Selisih sekecil apa pun (lebih berat) -> dialog hasil biasa seperti level lain.
+    const isLegendWin = result.win && result.used === result.mst
+        && LEGEND_INDEX >= 0 && game.levelIndex === LEGEND_INDEX;
+
+    // Cutscene Level 8 punya musik sendiri, jadi jingle menang biasa tidak dimainkan di sana.
+    if (!isLegendWin) setTimeout(result.win ? sfx.win : sfx.lose, 350); // jeda supaya tidak menabrak suara Poké Ball terakhir
+
     updateHeader();
     updatePanel();
     setMessage('');
     closeMenu();
-    showResult(result, {
-        hasNext: result.win && game.levelIndex >= 0 && game.levelIndex < LEVELS.length - 1,
+
+    const hasNext = result.win && game.levelIndex >= 0 && game.levelIndex < LEVELS.length - 1;
+    const openResult = () => showResult(result, {
+        hasNext,
         onRestart: restartGame,
         onNext: nextLevel,
         onMenu: goToMenu,
     });
+
+    if (isLegendWin) {
+        // Simpan bintang asli (0–3) SEBELUM cutscene supaya progres aman walau tab ditutup di tengah cutscene.
+        saveStars(game.state.level.name, result.stars);
+        try {
+            // Level 8 (bobot = MST): cutscene tetap berputar, lalu tombol ULANGI / MENU muncul di atasnya.
+            playLegendVictory({
+                stars: result.stars,
+                bodyHtml: resultBodyHtml(result, { hasNext }),
+                actions: { restart: restartGame, next: nextLevel, menu: goToMenu },
+                onFail: openResult, // cutscene error -> dialog hasil biasa
+            });
+        } catch (err) {
+            console.error(err);
+            openResult();
+        }
+    } else {
+        openResult();
+    }
 };
 
 /* ---------- Lobby ---------- */
