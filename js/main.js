@@ -10,6 +10,7 @@ import { $, showScreen } from './ui/dom.js';
 import { closeMenu, initHamburger, resetPanel, setMessage, updateHeader, updatePanel } from './ui/hud.js';
 import { draw, nodeAtPointer, resizeCanvas } from './ui/render.js';
 import { closeDialog, isDialogOpen, showLevelSelect, showResult, showSettings } from './ui/screens.js';
+import { sfx } from './ui/sfx.js';
 
 /* ---------- Alur permainan ---------- */
 
@@ -59,7 +60,11 @@ function selectLevel(index) {
 
 hooks.change = () => { updateHeader(); updatePanel(); };
 hooks.message = setMessage;
+hooks.sound = (name) => sfx[name]?.();
 hooks.finish = (result) => {
+    setTimeout(result.win ? sfx.win : sfx.lose, 350);   // jeda sedikit supaya tidak menabrak suara Poké Ball terakhir
+    updateHeader();
+    updatePanel();
     updateHeader();
     updatePanel();
     setMessage('');
@@ -81,13 +86,16 @@ function setCharacter(id) {
     $('partnerInfo').textContent = CHARACTERS[id].info;
 }
 
-$('start').onclick = () => showLevelSelect({ onSelect: selectLevel });
-$('how').onclick = () => showScreen('howto');
-$('howBack').onclick = () => showScreen('lobby');
-$('set').onclick = () => showSettings({
-    onCharacter: setCharacter,
-    onSpeed: (ms) => { game.stepMs = ms; },
-});
+$('start').onclick = () => { sfx.click(); showLevelSelect({ onSelect: selectLevel }); };
+$('how').onclick = () => { sfx.click(); showScreen('howto'); };
+$('howBack').onclick = () => { sfx.click(); showScreen('lobby'); };
+$('set').onclick = () => {
+    sfx.click();
+    showSettings({
+        onCharacter: setCharacter,
+        onSpeed: (ms) => { game.stepMs = ms; },
+    });
+};
 
 /* ---------- Di dalam game ---------- */
 

@@ -69,7 +69,7 @@ export function travelTo(nodeId) {
 function go(dir) {
   const S = state(), n = currentNode(), link = S.g.out[n.id][dir];
   S.dir = dir;
-  if (!link) { popup('Tembok!'); return; }
+  if (!link) { popup('Tembok!'); hooks.sound('wall'); return; }
 
   const { e, to: toId } = link, to = S.g.by[toId], w = e.w, [dx, dy] = DIRECTIONS[dir];
   const kind = e.claimed ? 'free' : to.vis ? 'cycle' : 'claim';
@@ -116,6 +116,7 @@ function finishEdge(step) {
     e.claimed = true;
     to.vis = true;
     session.balls++;
+    hooks.sound('pickup');
     S.fx.push({ x: to.x, y: to.y, t0: performance.now() });
   }
   S.last = to.id;
@@ -156,6 +157,7 @@ export function pump(ts) {
     step.dur = step.fast ? game.stepMs * 0.55 : game.stepMs;
     S.mv = step;
     S.dir = step.dir;
+    hooks.sound('step');
   }
 
   if (!S.mv && !S.steps.length && !S.over && S.pend) {

@@ -9,6 +9,7 @@ import { game } from '../logic/state.js';
 import { $ } from './dom.js';
 import { getTheme, setTheme } from './theme.js';
 import { getStars, saveStars } from '../logic/progress.js';
+import { sfx } from './sfx.js';
 
 let currentActions = {};
 
@@ -26,9 +27,14 @@ export function closeDialog() {
 export const isDialogOpen = () => $('ov').classList.contains('open');
 
 // Satu listener untuk semua tombol dialog
+// Tombol dialog yang berbunyi klik: pilih level, opsi pengaturan, dan tombol silang (✕)
+const CLICK_SOUND_ACTIONS = new Set(['level', 'character', 'speed', 'theme', 'close']);
+
 $('ovc').addEventListener('click', (e) => {
   const btn = e.target.closest('[data-action]');
-  if (btn) currentActions[btn.dataset.action]?.(btn.dataset);
+  if (!btn) return;
+  if (CLICK_SOUND_ACTIONS.has(btn.dataset.action)) sfx.click();
+  currentActions[btn.dataset.action]?.(btn.dataset);
 });
 
 /* ---------- Pilih level ---------- */

@@ -20,6 +20,7 @@ export const hooks = {
   change() { },        // state berubah -> perbarui tampilan
   message(html) { },   // tampilkan pesan di panel
   finish(win) { },     // permainan selesai
+  sound(name) { },     // mainkan efek suara ('step', 'pickup', ...)
 };
 
 /** Buat state baru dari data level. Mengembalikan null jika graph tidak terhubung. */
