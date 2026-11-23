@@ -60,6 +60,17 @@ export function createCineAudio() {
   verb.connect(conv); conv.connect(wet); wet.connect(lp);
   lp.connect(comp); comp.connect(master); master.connect(ctx.destination);
 
+  /* ----- Mute sementara (duck) untuk slash + fade-out, menyatu dengan tombol bisu (M) ----- */
+  let ducked = false, faded = false;
+  const applyMaster = (tc) => {
+    try { master.gain.setTargetAtTime(on && !ducked && !faded ? MASTER_GAIN : 0, ctx.currentTime, tc); } catch { /* abaikan */ }
+  };
+  const onDuck = (e) => {
+    ducked = !!(e.detail && e.detail.duck);
+    applyMaster(ducked ? 0.03 : 0.35);   // mute cepat, kembali pelan
+  };
+  if (typeof document !== 'undefined') document.addEventListener('cine:music', onDuck);
+
   const noiseBuf = (() => {
     const len = ctx.sampleRate * 2;
     const buf = ctx.createBuffer(1, len, ctx.sampleRate);
@@ -403,13 +414,17 @@ export function createCineAudio() {
       lp.frequency.setTargetAtTime(22000, t + ms / 1000, 0.07);
     },
 
-    fadeOut(sec = 0.4) { master.gain.setTargetAtTime(0, ctx.currentTime, sec / 4); },
-    close() { api.stopAmbient(); setTimeout(() => { try { ctx.close(); } catch { /* abaikan */ } }, 900); },
+    fadeOut(sec = 0.4) { faded = true; master.gain.setTargetAtTime(0, ctx.currentTime, sec / 4); },
+    close() {
+      if (typeof document !== 'undefined') document.removeEventListener('cine:music', onDuck);
+      api.stopAmbient();
+      setTimeout(() => { try { ctx.close(); } catch { /* abaikan */ } }, 900);
+    },
     toggle() {
       on = !on;
       api.enabled = on;
       try { localStorage.setItem(KEY, on ? 'on' : 'off'); } catch { /* abaikan */ }
-      master.gain.setTargetAtTime(on ? MASTER_GAIN : 0, ctx.currentTime, 0.02);
+      applyMaster(0.02);
       return on;
     },
   };

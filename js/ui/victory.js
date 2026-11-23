@@ -1,28 +1,9 @@
-/* ===== CUTSCENE KEMENANGAN · LEVEL 8 LEGEND =====
-   Cutscene sinematik layar penuh. Murni visual: TIDAK menyentuh skor, bintang
-   (0–3), progres, maupun algoritma Prim. Lima bintang di sini hanya dekorasi.
-
-   Cara kerja:
-   - Satu <canvas> beresolusi rendah (480 px lebar) di-scale dengan image-rendering: pixelated
-     supaya tampilan tetap pixel-art.
-   - Semua animasi adalah fungsi dari waktu `clock` (ms). Hit-stop = clock berhenti sebentar.
-   - Kamera 2.5D: setiap lapisan (langit, bintang, lantai, karakter, meteor dekat) bergerak
-     dengan faktor paralaks berbeda terhadap kamera (geser, zoom, miring, guncangan).
-   - Sprite karakter diambil dari getCharacterImage() (aset asli proyek).
-
-   Timeline (ms):
-     0–900      FASE 1  Legendary Awakening
-     900–2300   FASE 2  Pokémon Launch (Snorlax → Pikachu → Squirtle)
-     2300–2750  FASE 3  Legendary Impact Frame
-     2750–…     FASE 4  Five-Star Ascension (charge → launch → impact, satu per satu)
-     …          FASE 5  VICTORY reveal (huruf 3D menghantam, yaw 2.5D, mega impact)
-   Suara: js/ui/victory-audio.js (sintesis WebAudio, dipicu event timeline di bawah).
-
-   Setelah animasi utama selesai (TEND), adegan TIDAK ditutup: Pokémon tetap melompat, meteor,
-   ember, kilau judul, dll. terus berulang, dan panel hasil (penjelasan + tombol) naik dari bawah.
-   Tombol LEWATI / Enter / Space / Esc = loncat ke adegan akhir; SUARA / M = bisukan. */
+/* ===== CUTSCENE KEMENANGAN · LEVEL 8 LEGEND =====*/
 import { getCharacterImage } from '../data/sprites.js';
 import { createCineAudio } from './victory-audio.js';
+import { createStarCursor } from './victory-cursor.js';
+import { createSmashAudio } from './victory-smash-audio.js';
+import { createSlashAudio } from './victory-slash-audio.js';
 
 /* ---------- Util ---------- */
 
@@ -75,7 +56,7 @@ const TV = acc;                 // awal reveal VICTORY
 const GAP = 110;                // jeda antar huruf
 const TS0 = TV + 450;           // huruf pertama menghantam
 const TM = TS0 + 6 * GAP + 190; // mega impact (kata lengkap)
-const TEND = TM + 2800;         // panel hasil naik; adegan terus berulang setelah ini
+const TEND = TM + 2800;         // tombol ULANGI / MENU muncul; adegan terus berulang setelah ini
 const IMPACTS = [T_IMPACT, ...STAR.map((s) => s.ti), TM];
 
 /* ---------- Primitif pixel (semua pakai fillRect = tepi tajam) ---------- */
@@ -223,9 +204,9 @@ const OUT8 = [[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 
 /* ===================================================================== */
 
 /** Putar cutscene Level 8.
- *  stars    : bintang ASLI hasil permainan (0–3) – hanya ditampilkan, tidak diubah.
- *  bodyHtml : isi penjelasan hasil + tombol (dari resultBodyHtml di screens.js).
- *  actions  : { restart, next, menu } – dipanggil saat tombol di panel ditekan.
+ *  stars    : bintang ASLI hasil permainan (0–3) – tidak dipakai di layar (diterima demi kompatibilitas).
+ *  bodyHtml : tidak dipakai (diterima demi kompatibilitas dengan main.js).
+ *  actions  : { restart, next, menu } – dipanggil saat tombol ULANGI / MENU ditekan.
  *  onFail   : dipanggil bila cutscene error (tampilkan dialog hasil biasa). */
 export function playLegendVictory({ stars = 0, bodyHtml = '', actions = {}, onFail } = {}) {
   const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -252,19 +233,68 @@ export function playLegendVictory({ stars = 0, bodyHtml = '', actions = {}, onFa
   skipBtn.type = 'button';
   skipBtn.className = 'cine-skip';
   skipBtn.textContent = 'LEWATI ▸▸';
-  const muteBtn = document.createElement('button');
-  muteBtn.type = 'button';
-  muteBtn.className = 'cine-skip cine-mute';
   let A = createCineAudio();
   A.resume();
-  const labelMute = () => { muteBtn.textContent = A.enabled ? 'SUARA: ON' : 'SUARA: OFF'; };
-  labelMute();
   const sheet = document.createElement('div'); // tombol ULANGI / MENU (muncul setelah animasi)
   sheet.className = 'cine-actions';
-  root.append(canvas, muteBtn, skipBtn, sheet);
+  root.append(canvas, skipBtn, sheet);
   document.body.append(root);
   g = canvas.getContext('2d');
   g.imageSmoothingEnabled = false;
+
+  /* Kursor cahaya (efek murni, naik level tiap bintang mendarat) — lihat victory-cursor.js.
+     Level 5: klik kiri = ULTRA SMASH, tombol tengah mouse ditahan/dilepas = SLASH (layar terbelah + portal galaksi).
+     Di sini adegan pixel ikut bereaksi (hit-stop, kilat, guncangan, gelombang kejut, partikel)
+     dan suara diputar lewat modul audio masing-masing. */
+  const smashAudio = createSmashAudio({ isEnabled: () => A.enabled });
+  const slashAudio = createSlashAudio({ isEnabled: () => A.enabled });
+
+  /** Koordinat layar (px) -> koordinat canvas adegan (canvas memakai object-fit: contain). */
+  function toScene(px, py) {
+    const r = canvas.getBoundingClientRect();
+    const k = Math.min(r.width / W, r.height / H) || 1;
+    return [(px - r.left - (r.width - W * k) / 2) / k, (py - r.top - (r.height - H * k) / 2) / k];
+  }
+
+  let lastSceneSmash = -1e9; // reaksi adegan berat dibatasi supaya spam klik tidak membuat frame turun
+  const PRISM = ['#7fd8ff', '#ff5fd2', '#ffd83b', '#9dff7f', '#fff'];
+
+  const starCursor = createStarCursor(root, {
+    reduced,
+    getScene: () => canvas,
+    slashAudio,
+    onSmash({ x, y, combo, k, light }) {
+      smashAudio.play({ combo, k, light });
+      const nowMs = performance.now(), heavy = !light && nowMs - lastSceneSmash > 140;
+      const [sx, sy] = toScene(x, y), t = clock;
+      if (!heavy) { // klik beruntun: cukup guncangan kecil + percikan, tanpa hit-stop / gelombang pixel
+        shake(t, 6 * k, 220);
+        burst(sx, sy, 18, { speed: [120, 380], size: [2, 4], cols: [C.gold, '#fff'], grav: 200, life: [500, 900] });
+        return;
+      }
+      lastSceneSmash = nowMs;
+      if (!reduced) hit(80 + Math.min(combo, 8) * 10, sx, sy, false); // hit-stop singkat + garis kecepatan adegan
+      flash(t, 340, Math.min(1, 0.7 + 0.05 * combo));
+      shake(t, 16 * k, 420);
+      shock(t, { x: sx, y: sy, r1: 320, dur: 750, th0: 12, col: '#fff' });
+      shock(t + 80, { x: sx, y: sy, r1: 240, dur: 750, th0: 9, col: C.gold });
+      burst(sx, sy, 80, { speed: [150, 520], size: [2, 5], cols: [C.gold, '#fff', C.pale, '#ffb02e', C.cyan], grav: 220, life: [700, 1300] });
+      burst(sx, sy, 10, { type: 'star', speed: [80, 280], size: [0.7, 1.3], grav: 140, life: [1000, 1800] });
+      volley(Math.round((8 + Math.min(combo, 8)) * rm) + 2);
+    },
+    onSlash(type, info) {
+      if (type !== 'cut' && type !== 'slam') return;
+      const [sx, sy] = toScene(info.x, info.y), t = clock, big = type === 'slam';
+      if (!reduced) hit(big ? 130 : 110, sx, sy, false);
+      flash(t, big ? 520 : 440, big ? 1 : 0.9);
+      shake(t, big ? 20 : 18, big ? 600 : 520);
+      shock(t, { x: sx, y: sy, r1: 380, dur: 850, th0: 12, col: '#fff' });
+      shock(t + 70, { x: sx, y: sy, r1: 300, dur: 850, th0: 9, col: '#7fd8ff' });
+      shock(t + 140, { x: sx, y: sy, r1: 230, dur: 850, th0: 7, col: '#ff5fd2' });
+      burst(sx, sy, big ? 110 : 90, { speed: [140, 520], size: [2, 5], cols: PRISM, grav: 160, life: [700, 1400] });
+      volley(Math.round((big ? 16 : 12) * rm) + 2);
+    },
+  });
 
   const tc = document.createElement('canvas'); // kanvas judul (untuk efek yaw 2.5D)
   const TH = 170, TCY = 88;
@@ -287,7 +317,7 @@ export function playLegendVictory({ stars = 0, bodyHtml = '', actions = {}, onFa
   /* ----- State ----- */
   let cam = { x: 0, y: 0, zoom: 1, roll: 0 };
   let sh = { x: 0, y: 0, r: 0 };
-  let clock = 0, hold = 0, nowTs = 0, last = null, ei = 0, raf = 0;
+  let clock = 0, hold = 0, nowTs = 0, last = null, ei = 0, raf = 0, skipHideT = 0;
   let revealed = false, leaving = false, skipTs = null, jumped = false, fadeInTs = 0, blackA = 0;
   let imp = { until: 0, x: cx, y: cy, invert: false };
   const parts = [], shocks = [], flashes = [], shakes = [], meteors = [];
@@ -363,9 +393,9 @@ export function playLegendVictory({ stars = 0, bodyHtml = '', actions = {}, onFa
     if (parts.length > 700) parts.splice(0, parts.length - 700);
   }
   const dust = (x, y, n = 14) => burst(x, y, n, { speed: [30, 130], size: [2, 4], cols: ['#e8e1c8', '#b9b29a', '#ffffff'], arc: [Math.PI, TAU], flat: 0.45, grav: 60, life: [320, 620], p: 1 });
-  const shock = (t0, o) => shocks.push({ t0, dur: 500, r0: 4, r1: 100, th0: 6, th1: 1, col: C.gold, sq: 1, ...o });
-  const flash = (t0, dur, a) => flashes.push({ t0, dur, a });
-  const shake = (t0, amp, tau) => shakes.push({ t0, amp, tau });
+  const shock = (t0, o) => { if (shocks.length > 14) shocks.shift(); shocks.push({ t0, dur: 500, r0: 4, r1: 100, th0: 6, th1: 1, col: C.gold, sq: 1, ...o }); };
+  const flash = (t0, dur, a) => { if (flashes.length > 12) flashes.shift(); flashes.push({ t0, dur, a }); };
+  const shake = (t0, amp, tau) => { if (shakes.length > 24) shakes.shift(); shakes.push({ t0, amp, tau }); };
   const hit = (ms, x, y, invert = true) => { hold = ms; imp = { until: nowTs + ms, x, y, invert }; A.hitstop(ms); };
 
   function spawnMeteor(d, x, y) {
@@ -456,7 +486,7 @@ export function playLegendVictory({ stars = 0, bodyHtml = '', actions = {}, onFa
   });
 
   /* ----- Cue audio (dipicu dari timeline yang sama dengan visual) ----- */
-  at(0, () => A.awaken());
+  at(0, () => { A.awaken(); starCursor.start(); }); // kursor cahaya aktif sejak awal, level 0
   at(SN.f0, () => A.launch('sn'));
   at(PK.d0, () => A.launch('pk'));
   at(SQ.f0, () => A.launch('sq'));
@@ -468,14 +498,14 @@ export function playLegendVictory({ stars = 0, bodyHtml = '', actions = {}, onFa
   STAR.forEach((s, i) => {
     at(s.t0, () => A.charge(i, CHARGE[i]));
     at(s.tl, () => A.starLaunch(i, LAUNCH[i]));
-    at(s.ti, () => A.starImpact(i, (TM - s.ti) / 1000));
+    at(s.ti, () => { A.starImpact(i, (TM - s.ti) / 1000); starCursor.setLevel(i + 1); }); // bintang ke-(i+1) mendarat -> kursor naik level
   });
   at(TV, () => A.titleRiser(TS0 - TV));
   for (let k = 0; k < 7; k++) at(TS0 + k * GAP, () => A.letter(k));
-  at(TM, () => A.mega());
+  at(TM, () => { A.mega(); starCursor.finale(); });
   for (let i = 0; i < 14; i++) at(TM + 450 + i * 40, () => A.type(0));
   for (let i = 0; i < 20; i++) at(TM + 900 + i * 25, () => A.type(1));
-  at(TM + 3000, () => A.startAmbient()); // musik latar berulang setelah fanfare
+  at(TM + 3000, () => A.startAmbient()); // musik loop
 
   ev.sort((a, b) => a.t - b.t);
 
@@ -1108,6 +1138,10 @@ export function playLegendVictory({ stars = 0, bodyHtml = '', actions = {}, onFa
   /* ----- Kontrol ----- */
   function cleanup() {
     cancelAnimationFrame(raf);
+    clearTimeout(skipHideT);
+    starCursor.stop();
+    smashAudio.close();
+    slashAudio.close();
     removeEventListener('keydown', onKey, true);
     A.stopAmbient();
     A.fadeOut(0.25);
@@ -1117,7 +1151,7 @@ export function playLegendVictory({ stars = 0, bodyHtml = '', actions = {}, onFa
     root.style.pointerEvents = 'none';
     setTimeout(() => root.remove(), 400);
   }
-  /** Tombol di panel hasil ditekan: tutup cutscene lalu jalankan aksinya (ulangi / lanjut / menu). */
+  /** Tombol ULANGI / MENU ditekan: tutup cutscene lalu jalankan aksinya. */
   function leave(name) {
     if (leaving) return;
     leaving = true;
@@ -1132,10 +1166,11 @@ export function playLegendVictory({ stars = 0, bodyHtml = '', actions = {}, onFa
     try { onFail?.(); } catch (e) { console.error(e); }
   }
 
-  /** Panel hasil naik dari bawah; adegan tetap berjalan dan mengecil ke area di atas panel. */
   /** Setelah cutscene selesai: munculkan hanya tombol ULANGI + MENU di atas canvas (canvas tidak berubah). */
   function reveal() {
     revealed = true;
+    clearTimeout(skipHideT);
+    skipBtn.classList.remove('show');
     skipBtn.style.display = 'none';
     sheet.innerHTML = `
       <button type="button" class="cine-btn" data-action="restart">ULANGI</button>
@@ -1143,7 +1178,7 @@ export function playLegendVictory({ stars = 0, bodyHtml = '', actions = {}, onFa
     setTimeout(() => sheet.classList.add('show'), 30);
     setTimeout(() => { try { sheet.querySelector('.cine-btn')?.focus({ preventScroll: true }); } catch { /* abaikan */ } }, 800);
   }
-  
+
   sheet.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-action]');
     if (btn) leave(btn.dataset.action);
@@ -1156,18 +1191,28 @@ export function playLegendVictory({ stars = 0, bodyHtml = '', actions = {}, onFa
     imp = { until: 0, x: cx, y: cy, invert: false };
     A.stopAmbient(); A.fadeOut(0.05); A.close();
     A = createCineAudio();
-    A.resume(); labelMute(); A.startAmbient();
+    A.resume(); A.startAmbient();
+    starCursor.start();                              // aman dipanggil ulang
+    starCursor.setLevel(5, { instant: true });       // langsung level penuh
   }
   const requestSkip = () => { if (skipTs == null && !revealed) { skipTs = nowTs; skipBtn.disabled = true; A.fadeOut(0.2); } };
   function onKey(e) {
-    if (e.key === 'm' || e.key === 'M') { e.stopPropagation(); A.toggle(); labelMute(); return; }
-    if (revealed) return; // setelah panel muncul, tombol keyboard lain bekerja normal (Tab / Enter pada tombol)
+    if (e.key === 'm' || e.key === 'M') { e.stopPropagation(); A.toggle(); return; }
+    if (revealed) return; // setelah tombol muncul, keyboard lain bekerja normal (Tab / Enter pada tombol)
     if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); requestSkip(); }
   }
-  skipBtn.addEventListener('click', (e) => { e.stopPropagation(); requestSkip(); });
-  muteBtn.addEventListener('click', (e) => { e.stopPropagation(); A.toggle(); labelMute(); });
+
+  skipBtn.addEventListener('click', (e) => { e.stopPropagation(); skipBtn.classList.remove('show'); requestSkip(); });
+
+  // Tombol LEWATI tersembunyi; muncul 3 detik setiap layar diklik/disentuh
+  root.addEventListener('pointerdown', () => {
+    if (revealed || skipTs != null) return;
+    skipBtn.classList.add('show');
+    clearTimeout(skipHideT);
+    skipHideT = setTimeout(() => skipBtn.classList.remove('show'), 3000);
+  });
+
   addEventListener('keydown', onKey, true);
-  try { skipBtn.focus({ preventScroll: true }); } catch { /* abaikan */ }
 
   function frame(ts) {
     raf = requestAnimationFrame(frame);
