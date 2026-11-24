@@ -122,9 +122,6 @@
   background: #fff;
   border: 2px solid #222;
 }
-.fball.f1 { left: 6%; top: 24%; }
-.fball.f2 { left: 44%; top: 12%; animation-delay: -2s; transform: scale(0.8); }
-.fball.f3 { left: 30%; top: 62%; animation-delay: -4s; }
 .fball.f4 { right: 22%; top: 56%; animation-delay: -1s; transform: scale(1.2); }
 .fball.f5 { left: 74%; top: 36%; animation-delay: -3s; transform: scale(0.7); }
 
