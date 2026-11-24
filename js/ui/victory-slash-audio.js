@@ -305,7 +305,7 @@ export function createSlashAudio({ isEnabled = () => true } = {}) {
   };
   /** "Shing": denting logam tebasan (partial tak-harmonik tinggi + desis). */
   const shing = (t, base = 2400) => {
-    [[1, 0.5, 0.9], [2.76, 0.35, 0.6], [5.4, 0.25, 0.4], [8.93, 0.15, 0.3], [13.3, 0.1, 0.2]].forEach(([r, g, d]) => osc({ f0: base * r, t, dur: d, gain: 0.08 * g, a: 0.001, rv: 0.6 }));
+    [[1, 0.5, 0.9], [2.76, 0.35, 0.6], [5.4, 0.25, 0.4], [8.93, 0.15, 0.3], [13.3, 0.1, 0.2]].filter(([r]) => base * r < 16000).forEach(([r, g, d]) => osc({ f0: base * r, t, dur: d, gain: 0.08 * g, a: 0.001, rv: 0.6 }));
     hiss({ t, dur: 0.22, f0: 7000, f1: 12000, type: 'highpass', gain: 0.4, rv: 0.3 });
   };
   /** Kilau lonceng acak yang jatuh seperti debu bintang. */

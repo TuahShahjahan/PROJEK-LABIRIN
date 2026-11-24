@@ -11,6 +11,7 @@ import { draw, nodeAtPointer, resizeCanvas } from './ui/render.js';
 import { closeDialog, isDialogOpen, resultBodyHtml, showLevelSelect, showResult, showSettings } from './ui/screens.js';
 import { sfx } from './ui/sfx.js';
 import { playLegendVictory } from './ui/victory.js';
+import { playEpilogue } from './ui/victory-epilogue.js';
 
 /* Cutscene sinematik hanya untuk MENANG di "LEVEL 8 · LEGEND" dengan bobot PERSIS sama dengan MST. */
 const LEGEND_INDEX = LEVELS.findIndex((l) => l.name.startsWith('LEVEL 8'));
@@ -94,7 +95,21 @@ hooks.finish = (result) => {
             playLegendVictory({
                 stars: result.stars,
                 bodyHtml: resultBodyHtml(result, { hasNext }),
-                actions: { restart: restartGame, next: nextLevel, menu: goToMenu },
+                actions: {
+                     restart: restartGame,
+                    next: nextLevel,
+                 menu: () => {
+                       try {
+                            playEpilogue({
+                               onDone: goToMenu,
+                              onFail: goToMenu,
+                          });
+                      } catch (err) {
+                          console.error(err);
+                         goToMenu();
+                      }
+                 },
+                },
                 onFail: openResult, // cutscene error -> dialog hasil biasa
             });
         } catch (err) {

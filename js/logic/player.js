@@ -1,3 +1,4 @@
+
 /* ===== PEMAIN: membangun pohon rentang (spanning tree) edge demi edge =====
    Satu tekanan arah = menyusuri SATU edge (koridor) dari node tempat berdiri:
    - edge baru ke node belum dikunjungi -> dipasang ke pohon, biaya 1 budget per tile (= bobot edge)
@@ -11,6 +12,10 @@ import { game, hooks, session } from './state.js';
 const state = () => game.state;
 const isBusy = () => state().mv || state().steps.length > 0;
 const currentNode = () => state().g.by[state().last];
+
+// Kecepatan khusus Pikachu saat opsi CEPAT dipilih.
+const PIKACHU_FAST_STEP_MS = 80;
+const PIKACHU_DASH_MULTIPLIER = 0.2;
 
 /* ---------- Utilitas ---------- */
 
@@ -153,8 +158,26 @@ export function pump(ts) {
       if (S.over) return;
       continue;
     }
+
     step.t0 = ts;
-    step.dur = step.fast ? game.stepMs * 0.55 : game.stepMs;
+
+    // Kecepatan dasar mengikuti pilihan LAMBAT / NORMAL / CEPAT.
+    const baseDur = game.stepMs;
+
+    // Hanya Pikachu dengan pilihan CEPAT yang mendapat akselerasi tambahan.
+    const isPikachuFast =
+      game.character === 'pikachu' &&
+      baseDur === PIKACHU_FAST_STEP_MS;
+
+    const characterDur = isPikachuFast
+      ? baseDur * PIKACHU_DASH_MULTIPLIER
+      : baseDur;
+
+    // Gerakan melewati edge gratis tetap mempertahankan multiplier lamanya.
+    step.dur = step.fast
+      ? characterDur * 0.55
+      : characterDur;
+
     S.mv = step;
     S.dir = step.dir;
     hooks.sound('step');

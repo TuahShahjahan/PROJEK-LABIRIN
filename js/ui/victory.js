@@ -247,6 +247,7 @@ export function playLegendVictory({ stars = 0, bodyHtml = '', actions = {}, onFa
      Di sini adegan pixel ikut bereaksi (hit-stop, kilat, guncangan, gelombang kejut, partikel)
      dan suara diputar lewat modul audio masing-masing. */
   const smashAudio = createSmashAudio({ isEnabled: () => A.enabled });
+  let musicDucked = false; // musik latar cutscene dibisukan selama slash aktif (charge -> slash -> selesai)
   const slashAudio = createSlashAudio({ isEnabled: () => A.enabled });
 
   /** Koordinat layar (px) -> koordinat canvas adegan (canvas memakai object-fit: contain). */
@@ -283,10 +284,14 @@ export function playLegendVictory({ stars = 0, bodyHtml = '', actions = {}, onFa
       volley(Math.round((8 + Math.min(combo, 8)) * rm) + 2);
     },
     onSlash(type, info) {
+      // Lagu latar dibisukan begitu charge dimulai (supaya suara celestial + beat slash terdengar bersih),
+      // dan dinyalakan lagi (fade-in) saat slash selesai atau charge dibatalkan.
+      if (type === 'charge') { musicDucked = true; A.duck?.(true); return; }
+      if (type === 'cancel' || type === 'end') { musicDucked = false; A.duck?.(false); return; }
       if (type !== 'cut' && type !== 'slam') return;
       const [sx, sy] = toScene(info.x, info.y), t = clock, big = type === 'slam';
       if (!reduced) hit(big ? 130 : 110, sx, sy, false);
-      flash(t, big ? 520 : 440, big ? 1 : 0.9);
+      flash(t, big ? 360 : 300, big ? 0.55 : 0.45); // kursor sudah membuat kilat layar penuhnya sendiri
       shake(t, big ? 20 : 18, big ? 600 : 520);
       shock(t, { x: sx, y: sy, r1: 380, dur: 850, th0: 12, col: '#fff' });
       shock(t + 70, { x: sx, y: sy, r1: 300, dur: 850, th0: 9, col: '#7fd8ff' });
@@ -1192,6 +1197,7 @@ export function playLegendVictory({ stars = 0, bodyHtml = '', actions = {}, onFa
     A.stopAmbient(); A.fadeOut(0.05); A.close();
     A = createCineAudio();
     A.resume(); A.startAmbient();
+    if (musicDucked) A.duck?.(true);               // LEWATI saat slash aktif: audio baru tetap dibisukan
     starCursor.start();                              // aman dipanggil ulang
     starCursor.setLevel(5, { instant: true });       // langsung level penuh
   }

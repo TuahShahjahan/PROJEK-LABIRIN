@@ -1,12 +1,7 @@
-/* ===== SUARA ULTRA SMASH · dentuman keras tiap klik di kursor level 5 =====
-   Combo 1 sampai 100 memakai dentuman PENUH yang sama (boom, geraman, brass, lonceng, puing).
-   Nada naik tiap combo sampai 1 oktaf (combo 13), lalu dijaga di nada itu dan ditambah lapisan lonceng
-   ekstra supaya tetap terasa makin dahsyat. Versi ringan hanya dipakai kalau klik DEMPET banget (< 70 ms). */
+/* ===== SUARA ULTRA SMASH · dentuman keras tiap klik di kursor level 5 =====*/
 
 const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
-const MAX_SHIFT = 12;       // nada naik maksimal (semiton) = 1 oktaf
-const MIN_GAP_MS = 35;      // klik lebih rapat dari ini diabaikan
-const LITE_GAP_MS = 70;     // klik lebih rapat dari ini memakai versi ringan
+const MAX_FULL_VOICES = 3;
 
 /** Kurva distorsi (clipping keras) untuk geraman. */
 function distortionCurve(amount) {
@@ -20,7 +15,7 @@ function distortionCurve(amount) {
 
 export function createSmashAudio({ isEnabled = () => true } = {}) {
   let ctx = null, bus = null, send = null, noise = null, curve = null;
-  let lastAt = 0, dead = false;
+  let lastAt = 0, dead = false, ends = []; // ends = waktu selesai tiap dentuman penuh (jam AudioContext)
 
   function init() {
     if (ctx) return true;
@@ -67,8 +62,8 @@ export function createSmashAudio({ isEnabled = () => true } = {}) {
   function tone({ type = 'sine', f0, f1 = f0, t, dur, gain, a = 0.003, rv = 0, shape = false, lp = 0 }) {
     const o = ctx.createOscillator();
     o.type = type;
-    o.frequency.setValueAtTime(Math.min(f0, 18000), t);
-    if (f1 !== f0) o.frequency.exponentialRampToValueAtTime(Math.max(1, Math.min(f1, 18000)), t + dur);
+    o.frequency.setValueAtTime(f0, t);
+    if (f1 !== f0) o.frequency.exponentialRampToValueAtTime(Math.max(1, f1), t + dur);
     const g = ctx.createGain();
     g.gain.setValueAtTime(0.0001, t);
     g.gain.exponentialRampToValueAtTime(Math.max(0.0002, gain), t + a);
@@ -108,19 +103,18 @@ export function createSmashAudio({ isEnabled = () => true } = {}) {
   function play({ combo = 1, k = 1, light = false } = {}) {
     if (!isEnabled() || !init()) return;
     try { if (ctx.state === 'suspended') ctx.resume(); } catch { /* abaikan */ }
-    void light;                                               // dentuman penuh untuk semua combo (tidak lagi dialihkan ke versi ringan)
 
     const nowMs = performance.now(), gap = nowMs - lastAt;
-    if (gap < MIN_GAP_MS) return;                             // klik super cepat: abaikan
+    if (gap < 35) return;                                     // klik super cepat: abaikan
     lastAt = nowMs;
 
     const t = ctx.currentTime + 0.005;
-    const lite = gap < LITE_GAP_MS;                           // hanya klik dempet banget
+    ends = ends.filter((e) => e > t);
+    const lite = light || gap < 120 || ends.length >= MAX_FULL_VOICES;
 
-    const shift = Math.min(Math.max(combo - 1, 0), MAX_SHIFT); // nada naik per combo, berhenti di 1 oktaf
+    const shift = Math.min(Math.max(combo - 1, 0), 7);        // nada naik per combo
     const r = Math.pow(2, shift / 12) * (1 + (Math.random() - 0.5) * 0.06);
-    const kk = Math.min(k, 2.2);                              // k sudah dibatasi di kursor; jaga-jaga
-    const v = Math.min(1.25, 0.95 + 0.04 * Math.min(combo, 8)) * Math.min(1.15, 0.95 + 0.05 * kk);
+    const v = Math.min(1.25, 0.95 + 0.04 * combo) * Math.min(1.15, 0.95 + 0.05 * k);
 
     // 1. transien klik tajam (selalu)
     hiss({ t, dur: 0.045, f0: 2500, type: 'highpass', gain: 0.9 * v });
@@ -130,15 +124,17 @@ export function createSmashAudio({ isEnabled = () => true } = {}) {
     tone({ type: 'triangle', f0: 300 * r, f1: 60, t, dur: 0.38, gain: 0.7 * v, a: 0.002 });
 
     if (lite) {
-      // hanya untuk klik dempet < 70 ms: tambah sedikit badan ledakan saja
+      // versi ringan: tambah sedikit badan ledakan saja
       hiss({ t, dur: 0.5, f0: 5000, f1: 140, type: 'lowpass', q: 0.7, gain: 0.55 * v });
       return;
     }
 
+    ends.push(t + 1.5);
+
     hiss({ t, dur: 0.18, f0: 1800, type: 'bandpass', q: 0.8, gain: 0.6 * v, rv: 0.2 });   // retakan ala snare
 
     // 3. geraman terdistorsi (kesan "destroyer")
-    tone({ type: 'sawtooth', f0: 110 * r, f1: 38, t, dur: 0.8, gain: 0.5 * v, a: 0.006 - 0.002, shape: true, lp: 520 });
+    tone({ type: 'sawtooth', f0: 110 * r, f1: 38, t, dur: 0.8, gain: 0.5 * v, a: 0.004, shape: true, lp: 520 });
 
     // 4. ledakan noise: sapuan lowpass tinggi -> rendah + ekor reverb
     hiss({ t, dur: 1.3, f0: 7000, f1: 90, type: 'lowpass', q: 0.7, gain: 0.9 * v, rv: 0.4 });
@@ -156,15 +152,6 @@ export function createSmashAudio({ isEnabled = () => true } = {}) {
     // 7. serpihan puing: beberapa klik kecil acak
     for (let i = 0; i < 5; i++) {
       hiss({ t: t + 0.05 + Math.random() * 0.6, dur: 0.05, f0: 3000 + Math.random() * 5000, type: 'bandpass', q: 3, gain: 0.12 + Math.random() * 0.08, rv: 0.2 });
-    }
-
-    // 8. combo tinggi (>= 8): lapisan lonceng ekstra, makin banyak sampai combo 100 (nada tetap naik sampai 1 oktaf)
-    if (combo >= 8) {
-      const extra = Math.min(4, 1 + Math.floor((combo - 8) / 12));
-      for (let i = 0; i < extra; i++) {
-        tone({ f0: mtof(96 + i * 4) * r, t: t + 0.08 + i * 0.05, dur: 1.8, gain: 0.05 * v, a: 0.003, rv: 0.85 });
-      }
-      tone({ f0: 70 * r, f1: 28, t, dur: 1.1, gain: 0.35 * v, a: 0.004 });   // sub tambahan supaya tetap berat
     }
   }
 

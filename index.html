@@ -12,6 +12,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/lobby.css" />
     <link rel="stylesheet" href="css/victory.css" />
     <script>try{document.documentElement.dataset.theme=localStorage.getItem('pokemon-maze:theme')==='dark'?'dark':'light'}catch(e){}</script>
   </head>
@@ -54,34 +55,81 @@
 
     <!-- ===== LOBBY ===== -->
     <main id="lobby">
+      <!-- Latar dekoratif (semua CSS) -->
+      <div class="lob-sky" aria-hidden="true">
+        <i class="lob-stars"></i>
+        <i class="lob-sun"></i>
+        <i class="cloud c1"></i><i class="cloud c2"></i><i class="cloud c3"></i>
+        <svg class="lob-graph" viewBox="0 0 520 340">
+          <path class="gx" d="M70 70L250 70M250 70L450 70M70 70L70 250M250 250L450 250" />
+          <path class="ge e1" d="M70 70L250 70" />
+          <path class="ge e2" d="M250 70L450 70" />
+          <path class="ge e3" d="M250 70L250 250" />
+          <path class="ge e4" d="M250 250L70 250" />
+          <path class="ge e5" d="M450 70L450 250" />
+          <path class="ge e6" d="M70 250L70 70" />
+          <g class="gn"><circle cx="70" cy="70" r="16" fill="#d9444d" stroke="#222" stroke-width="4" /><circle cx="70" cy="70" r="6" fill="#fff" /></g>
+          <g class="gn"><circle cx="250" cy="70" r="16" fill="#d9444d" stroke="#222" stroke-width="4" /><circle cx="250" cy="70" r="6" fill="#fff" /></g>
+          <g class="gn"><circle cx="450" cy="70" r="16" fill="#d9444d" stroke="#222" stroke-width="4" /><circle cx="450" cy="70" r="6" fill="#fff" /></g>
+          <g class="gn"><circle cx="70" cy="250" r="16" fill="#d9444d" stroke="#222" stroke-width="4" /><circle cx="70" cy="250" r="6" fill="#fff" /></g>
+          <g class="gn"><circle cx="250" cy="250" r="16" fill="#d9444d" stroke="#222" stroke-width="4" /><circle cx="250" cy="250" r="6" fill="#fff" /></g>
+          <g class="gn"><circle cx="450" cy="250" r="16" fill="#d9444d" stroke="#222" stroke-width="4" /><circle cx="450" cy="250" r="6" fill="#fff" /></g>
+        </svg>
+        <i class="fball f1"></i><i class="fball f2"></i><i class="fball f3"></i
+        ><i class="fball f4"></i><i class="fball f5"></i>
+        <div class="lob-ground"></div>
+      </div>
+
       <div class="lw">
         <div class="l">
+          <span class="lob-tag px" style="--i: 0">KANTO · RUTE 01</span>
           <h1 class="px">
             <span class="y">POKÉMON</span><span class="bl">MAZE</span>
           </h1>
-          <p class="sub">
+          <p class="sub" style="--i: 2">
             Kumpulkan Poké Ball. Bangun Minimum Spanning Tree.<br />Jelajahi
             Kanto bersama partner Pokémon-mu.
           </p>
-          <div class="partner">
+          <div class="partner" style="--i: 3">
             <img id="pc" src="assets/characters/snorlax/down.png" alt="" />
             <div>
               <b id="partnerName">SNORLAX</b
               ><span id="partnerInfo">Partner Pokémon · Normal type</span>
             </div>
+            <div class="party" role="group" aria-label="Pilih partner">
+              <button class="party-btn" data-id="snorlax" aria-label="Snorlax">
+                <img src="assets/characters/snorlax/down.png" alt="" />
+              </button>
+              <button class="party-btn" data-id="pikachu" aria-label="Pikachu">
+                <img src="assets/characters/pikachu/down.png" alt="" />
+              </button>
+              <button class="party-btn" data-id="squirtle" aria-label="Squirtle">
+                <img src="assets/characters/squirtle/down.png" alt="" />
+              </button>
+            </div>
           </div>
-          <button class="btn big" id="start">START</button>
-          <div class="two">
-            <button class="btn" id="how">CARA MAIN</button>
-            <button class="btn" id="set">PENGATURAN</button>
+          <button class="btn big" id="start" style="--i: 4">▶ START</button>
+          <div class="two" style="--i: 5">
+            <button class="btn" id="how"><span class="ico">?</span>CARA MAIN</button>
+            <button class="btn" id="set"><span class="ico">⚙</span>PENGATURAN</button>
+          </div>
+          <div class="lob-stats" style="--i: 6">
+            <span class="pill"><b id="lobStars">0 / 24</b> ★ BINTANG</span>
+            <span class="pill"><b id="lobLevels">8</b> LEVEL</span>
+            <span class="pill">+ MODE ACAK</span>
           </div>
         </div>
-        <img id="mascot" src="assets/ui/squirtle.png" alt="" />
+        <div class="hero">
+          <img id="mascot" src="assets/ui/squirtle.png" alt="" />
+        </div>
       </div>
       <footer class="foot">
-        <span>KELOMPOK 6</span><span>EGA ASLIYA PUTRI</span
-        ><span>ENDRY JULYAN PUTRA</span> <span>M. BOLKIAH AYESHA A.A</span
-        ><span>TUAH SHAHJAHAN ARZU</span><span>SHAFIN MAULANA</span>
+        <b class="px foot-team">KELOMPOK 6</b>
+        <div class="foot-names">
+          <span>EGA ASLIYA PUTRI</span><span>ENDRY JULYAN PUTRA</span
+          ><span>M. BOLKIAH AYESHA A.A</span><span>TUAH SHAHJAHAN ARZU</span
+          ><span>SHAFIN MAULANA</span>
+        </div>
       </footer>
     </main>
 

@@ -17,7 +17,7 @@ const STAR_NOTES = [72, 76, 79, 84, 88]; // C5 E5 G5 C6 E6 -> arpeggio C mayor n
 
 const METHODS = [
   'awaken', 'launch', 'land', 'riser', 'impact', 'charge', 'starLaunch', 'starImpact',
-  'titleRiser', 'letter', 'mega', 'type', 'hitstop', 'fadeOut', 'close', 'resume', 'startAmbient', 'stopAmbient',
+  'titleRiser', 'letter', 'mega', 'type', 'hitstop', 'fadeOut', 'close', 'resume', 'startAmbient', 'stopAmbient', 'duck',
 ];
 
 function silent(enabled) {
@@ -35,9 +35,11 @@ export function createCineAudio() {
   let ctx;
   try { ctx = new AC(); } catch { return silent(false); }
 
-  /* ----- Graph: suara -> (langsung + reverb) -> lowpass -> compressor -> master ----- */
+  /* ----- Graph: suara -> (langsung + reverb) -> lowpass -> compressor -> master -> duck -> keluaran ----- */
   const master = ctx.createGain();
   master.gain.value = on ? MASTER_GAIN : 0;
+  const duckG = ctx.createGain(); // bisu sementara (dipakai saat slash); terpisah dari tombol M (master)
+  duckG.gain.value = 1;
   const comp = ctx.createDynamicsCompressor();
   comp.threshold.value = -14; comp.knee.value = 12; comp.ratio.value = 6; comp.attack.value = 0.003; comp.release.value = 0.2;
   const lp = ctx.createBiquadFilter();
@@ -58,18 +60,7 @@ export function createCineAudio() {
   }
   direct.connect(lp);
   verb.connect(conv); conv.connect(wet); wet.connect(lp);
-  lp.connect(comp); comp.connect(master); master.connect(ctx.destination);
-
-  /* ----- Mute sementara (duck) untuk slash + fade-out, menyatu dengan tombol bisu (M) ----- */
-  let ducked = false, faded = false;
-  const applyMaster = (tc) => {
-    try { master.gain.setTargetAtTime(on && !ducked && !faded ? MASTER_GAIN : 0, ctx.currentTime, tc); } catch { /* abaikan */ }
-  };
-  const onDuck = (e) => {
-    ducked = !!(e.detail && e.detail.duck);
-    applyMaster(ducked ? 0.03 : 0.35);   // mute cepat, kembali pelan
-  };
-  if (typeof document !== 'undefined') document.addEventListener('cine:music', onDuck);
+  lp.connect(comp); comp.connect(master); master.connect(duckG); duckG.connect(ctx.destination);
 
   const noiseBuf = (() => {
     const len = ctx.sampleRate * 2;
@@ -298,6 +289,12 @@ export function createCineAudio() {
     },
     resume() { try { if (ctx.state === 'suspended') ctx.resume(); } catch { /* abaikan */ } },
 
+    /** Bisukan SEMUA suara cutscene sementara (on = true; dipakai selama slash) atau nyalakan lagi dengan
+     *  fade-in (on = false). Terpisah dari tombol M: tidak mengubah pilihan suara pemain. */
+    duck(on, sec = 0.12) {
+      try { duckG.gain.setTargetAtTime(on ? 0 : 1, ctx.currentTime, on ? sec / 4 : 0.2); } catch { /* abaikan */ }
+    },
+
     /** FASE 1: drone naik, shimmer, detak, bip arpeggio antisipasi. */
     awaken() {
       const t = now();
@@ -414,17 +411,13 @@ export function createCineAudio() {
       lp.frequency.setTargetAtTime(22000, t + ms / 1000, 0.07);
     },
 
-    fadeOut(sec = 0.4) { faded = true; master.gain.setTargetAtTime(0, ctx.currentTime, sec / 4); },
-    close() {
-      if (typeof document !== 'undefined') document.removeEventListener('cine:music', onDuck);
-      api.stopAmbient();
-      setTimeout(() => { try { ctx.close(); } catch { /* abaikan */ } }, 900);
-    },
+    fadeOut(sec = 0.4) { master.gain.setTargetAtTime(0, ctx.currentTime, sec / 4); },
+    close() { api.stopAmbient(); setTimeout(() => { try { ctx.close(); } catch { /* abaikan */ } }, 900); },
     toggle() {
       on = !on;
       api.enabled = on;
       try { localStorage.setItem(KEY, on ? 'on' : 'off'); } catch { /* abaikan */ }
-      applyMaster(0.02);
+      master.gain.setTargetAtTime(on ? MASTER_GAIN : 0, ctx.currentTime, 0.02);
       return on;
     },
   };
